@@ -267,20 +267,16 @@
     <!-- Meridian-only info cards (hidden for LEX) -->
     <div class="info-grid" id="info-grid" style="display:none">
       <div class="info-card">
-        <div class="info-card-label">Barrister</div>
+        <div class="info-card-label" id="info-barrister-label">Barrister</div>
         <div class="info-card-value accent" id="info-barrister">—</div>
       </div>
       <div class="info-card">
-        <div class="info-card-label">Period</div>
+        <div class="info-card-label" id="info-period-label">Period</div>
         <div class="info-card-value" id="info-period">—</div>
       </div>
       <div class="info-card">
-        <div class="info-card-label">Records / Cases</div>
+        <div class="info-card-label">Sheet</div>
         <div class="info-card-value" id="info-records">—</div>
-      </div>
-      <div class="info-card">
-        <div class="info-card-label">Chambers Contribution</div>
-        <div class="info-card-value" id="info-contrib">—</div>
       </div>
     </div>
 
@@ -362,6 +358,9 @@ var parsedRows    = [];
 var accountCode   = '100';
 var selectedChambers = 'Chambers';
 var detectedFormat   = null;  // 'lex' | 'meridian'
+var reportBarrister  = '';    // full name for CSV filename
+var reportPeriod     = '';    // period string for CSV filename
+var reportCode       = '';    // barrister code/initials for CSV filename (CPX, CI, etc.)
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 function fmt(n) { return new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP' }).format(n); }
@@ -447,9 +446,13 @@ function applyTheme(format) {
     copyBtn.style.color         = '#c4b5fd';
   }
 
-  // Meridian-only sections
-  document.getElementById('info-grid').style.display  = isLex ? 'none' : 'grid';
+  // Legend is Meridian-only; info-grid is shown for both
+  document.getElementById('info-grid').style.display  = 'grid';
   document.getElementById('legend').style.display     = isLex ? 'none' : 'flex';
+
+  // Info card labels differ by format
+  document.getElementById('info-barrister-label').textContent = isLex ? 'Barrister(s)' : 'Barrister';
+  document.getElementById('info-period-label').textContent    = 'Period';
 
   // VAT label wording
   document.getElementById('vat-src-label').textContent = isLex ? 'LEX VAT (from report totals)' : 'Meridian VAT (from Barrister Total row)';
@@ -666,6 +669,43 @@ function parseLex(wb) {
     vatWarn.style.display = 'block';
   } else { vatWarn.style.display = 'none'; }
 
+  // ── LEX info cards ────────────────────────────────────────────────────────
+  // The first row of each barrister sheet contains a header string like:
+  // "Payment Summary Report For Mr Christopher Pix (CPX) from 01/12/2025 to 28/02/2026 - Generated ..."
+  // Extract the full name and period from this string.
+  var lexBarrister = psSheets.join(', ');  // fallback to sheet initials
+  var lexPeriod    = '—';
+
+  var firstWs  = wb.Sheets[psSheets[0]];
+  var firstRaw = XLSX.utils.sheet_to_json(firstWs, { header: 1, defval: null });
+  for (var pi = 0; pi < Math.min(10, firstRaw.length); pi++) {
+    var pr = firstRaw[pi]; if (!pr) continue;
+    for (var pj = 0; pj < pr.length; pj++) {
+      if (typeof pr[pj] !== 'string') continue;
+      var cell = pr[pj].trim();
+
+      // Full name: "Payment Summary Report For Mr Firstname Lastname (ABC) from ..."
+      // Capture everything between "For " and " from" as the barrister name
+      var nameMatch = cell.match(/\bfor\s+(.+?)\s+from\s+\d{2}\/\d{2}\/\d{4}/i);
+      if (nameMatch) lexBarrister = nameMatch[1].trim();
+
+      // Period: "from DD/MM/YYYY to DD/MM/YYYY"
+      var periodMatch = cell.match(/from\s+(\d{2}\/\d{2}\/\d{4}\s+to\s+\d{2}\/\d{2}\/\d{4})/i);
+      if (periodMatch) lexPeriod = periodMatch[1].trim();
+
+      if (lexBarrister !== psSheets.join(', ') && lexPeriod !== '—') break;
+    }
+    if (lexBarrister !== psSheets.join(', ') && lexPeriod !== '—') break;
+  }
+
+  document.getElementById('info-barrister').textContent = lexBarrister;
+  document.getElementById('info-period').textContent    = lexPeriod;
+  // Sheets card: show sheet name(s) (the barrister initials/code used by LEX)
+  document.getElementById('info-records').textContent   = psSheets.join(', ');
+  reportBarrister = lexBarrister;
+  reportPeriod    = lexPeriod;
+  reportCode      = psSheets.join('_');
+
   renderResults(totalPyt, psSheets.join(', '), 'Payments Out shown as negative');
 }
 
@@ -726,7 +766,6 @@ function parseMeridian(wb) {
 
   parsedRows = [];
   var meridianTotal = null, meridianVatFees = null, meridianVatExp = null;
-  var recordCount = null, caseCount = null, chambersContrib = null;
 
   for (var i = headerIdx + 1; i < raw.length; i++) {
     var row = raw[i]; if (!row) continue;
@@ -739,9 +778,6 @@ function parseMeridian(wb) {
         if (COL_VATPCT !== -1 && typeof row[COL_VATPCT] === 'number') meridianVatFees = row[COL_VATPCT];
         if (COL_VATEXP !== -1 && typeof row[COL_VATEXP] === 'number') meridianVatExp  = row[COL_VATEXP];
       }
-      if (/total number of records/i.test(cellStr)) { var ln=null; row.forEach(function(v){ if(typeof v==='number') ln=v; }); if(ln!==null) recordCount=ln; }
-      if (/total number of cases/i.test(cellStr))   { var ln=null; row.forEach(function(v){ if(typeof v==='number') ln=v; }); if(ln!==null) caseCount=ln; }
-      if (/chambers contribution/i.test(cellStr))   { row.forEach(function(v){ if(typeof v==='number'&&v>0) chambersContrib=v; }); }
       continue;
     }
 
@@ -788,10 +824,12 @@ function parseMeridian(wb) {
   // Metadata cards
   document.getElementById('info-barrister').textContent = barristerText || '—';
   document.getElementById('info-period').textContent    = periodText    || '—';
-  document.getElementById('info-records').textContent   =
-    (recordCount !== null ? recordCount + ' records' : '—') +
-    (caseCount   !== null ? ' / ' + caseCount + ' cases' : '');
-  document.getElementById('info-contrib').textContent   = chambersContrib !== null ? fmt(chambersContrib) : '—';
+  document.getElementById('info-records').textContent   = targetSheet;
+  reportBarrister = barristerText;
+  reportPeriod    = periodText;
+  // Extract initials from brackets e.g. "Mr. Clement Idowu (CI)" → "CI"
+  var codeMatch = barristerText.match(/\(([^)]+)\)\s*$/);
+  reportCode = codeMatch ? codeMatch[1].trim() : '';
 
   // VAT override warning
   var overrideRows = parsedRows.filter(function(r){ return r.vatOverride; });
@@ -879,12 +917,46 @@ function buildCSV() {
   return lines.join('\n');
 }
 function copyCSV()     { if (parsedRows.length) navigator.clipboard.writeText(buildCSV()); }
+function buildFilename() {
+  var MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Primary: barrister code (CPX, CI, ACD etc.)
+  // Fallback 1: barrister name stripped of title and with spaces as underscores
+  // Fallback 2: Unknown
+  var code = reportCode.replace(/[^a-zA-Z0-9_\-]/g, '');
+  if (!code) {
+    code = reportBarrister
+      .replace(/^(mr\.?|mrs\.?|ms\.?|miss\.?|dr\.?|sir\.?|lord\.?|lady\.?)\s+/i, '')
+      .replace(/\([^)]*\)\s*$/, '')  // strip trailing (initials) if present
+      .trim()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9_\-]/g, '');
+  }
+  if (!code) code = 'Unknown';
+
+  // Parse period string: expects "DD/MM/YYYY to DD/MM/YYYY"
+  var suffix = 'payment_summary';  // fallback
+  var m = reportPeriod.match(/(\d{2})\/(\d{2})\/(\d{4})\s+to\s+(\d{2})\/(\d{2})\/(\d{4})/);
+  if (m) {
+    var startMonth = parseInt(m[2], 10);
+    var startYear  = parseInt(m[3], 10);
+    var endMonth   = parseInt(m[5], 10);
+    var endYear    = parseInt(m[6], 10);
+    var endMonthName = MONTHS[endMonth - 1];
+    suffix = (startMonth === endMonth && startYear === endYear)
+      ? endMonthName + endYear
+      : 'QE' + endMonthName + endYear;
+  }
+
+  return code + '_PS_' + suffix + '.csv';
+}
+
 function downloadCSV() {
   if (!parsedRows.length) return;
   var blob = new Blob([buildCSV()], { type: 'text/csv' });
   var a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = (detectedFormat === 'lex' ? 'lex' : 'meridian') + '_payment_summary.csv';
+  a.download = buildFilename();
   a.click(); URL.revokeObjectURL(a.href);
 }
 
