@@ -104,6 +104,9 @@
   .copy-btn.jun-btn { background: #1e2a3a; border-color: #3a5a7a; color: #93c5fd; }
   .copy-btn.jun-btn:hover { background: #263548; }
   .copy-btn.jun-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .copy-btn.mayjun-btn { background: #1e2a3a; border-color: #3a5a7a; color: #93c5fd; }
+  .copy-btn.mayjun-btn:hover { background: #263548; }
+  .copy-btn.mayjun-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .copy-btn.sales-btn { background: #1a2e3a; border-color: #2a6a8a; color: #7dd3fc; }
   .copy-btn.sales-btn:hover { background: #1e3a4a; }
   .copy-btn.sales-may-btn { background: #1a2e3a; border-color: #2a6a8a; color: #7dd3fc; }
@@ -112,6 +115,9 @@
   .copy-btn.sales-jun-btn { background: #1a2e3a; border-color: #2a6a8a; color: #7dd3fc; }
   .copy-btn.sales-jun-btn:hover { background: #1e3a4a; }
   .copy-btn.sales-jun-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .copy-btn.sales-mayjun-btn { background: #1a2e3a; border-color: #2a6a8a; color: #7dd3fc; }
+  .copy-btn.sales-mayjun-btn:hover { background: #1e3a4a; }
+  .copy-btn.sales-mayjun-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .btn-separator { width: 1px; height: 22px; background: var(--border2); align-self: center; margin: 0 2px; }
 
   .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
@@ -301,10 +307,12 @@
       <button class="copy-btn bank-btn" onclick="downloadCSV()">&#8659; Bank Xero CSV</button>
       <button class="copy-btn may-btn" id="may-btn" onclick="downloadMayCSV()" title="Download rows dated 01/05/2026 – 31/05/2026 only">&#8659; Bank Xero May 2026</button>
       <button class="copy-btn jun-btn" id="jun-btn" onclick="downloadJunCSV()" title="Download rows dated 01/06/2026 – 30/06/2026 only">&#8659; Bank Xero Jun 2026</button>
+      <button class="copy-btn mayjun-btn" id="mayjun-btn" onclick="downloadMayJunCSV()" title="Download rows dated 01/05/2026 – 30/06/2026 only">&#8659; Bank Xero May+Jun 2026</button>
       <div class="btn-separator"></div>
       <button class="copy-btn sales-btn" onclick="downloadSalesCSV()">&#8659; Sales Xero CSV</button>
       <button class="copy-btn sales-may-btn" id="sales-may-btn" onclick="downloadSalesMayCSV()" title="Download Sales Invoice rows dated 01/05/2026 – 31/05/2026 only">&#8659; Sales Xero May 2026</button>
       <button class="copy-btn sales-jun-btn" id="sales-jun-btn" onclick="downloadSalesJunCSV()" title="Download Sales Invoice rows dated 01/06/2026 – 30/06/2026 only">&#8659; Sales Xero Jun 2026</button>
+      <button class="copy-btn sales-mayjun-btn" id="sales-mayjun-btn" onclick="downloadSalesMayJunCSV()" title="Download Sales Invoice rows dated 01/05/2026 – 30/06/2026 only">&#8659; Sales Xero May+Jun 2026</button>
     </div>
 
     <div class="legend" id="legend" style="display:none">
@@ -1078,6 +1086,15 @@ function downloadSalesJunCSV() {
   a.download = buildFilename().replace(/_PS_.+$/, '') + '_SI_Jun2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
 
+function downloadSalesMayJunCSV() {
+  var rows = getMayJunRows();
+  if (!rows.length) { alert('No rows found for May–June 2026.'); return; }
+  var csv = buildSalesCSVFromRows(rows);
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = buildFilename().replace(/_PS_.+$/, '') + '_SI_MayJun2026.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+
 // ── Month filters ──────────────────────────────────────────────────────────
 function isMonthYear(dateStr, month, year) {
   if (!dateStr) return false;
@@ -1088,6 +1105,7 @@ function isMonthYear(dateStr, month, year) {
 }
 function getMayRows() { return parsedRows.filter(function(r){ return isMonthYear(r.date, 5, 2026); }); }
 function getJunRows() { return parsedRows.filter(function(r){ return isMonthYear(r.date, 6, 2026); }); }
+function getMayJunRows() { return parsedRows.filter(function(r){ return isMonthYear(r.date, 5, 2026) || isMonthYear(r.date, 6, 2026); }); }
 
 function buildMonthCSV(rows) {
   if (!rows.length) return null;
@@ -1121,14 +1139,25 @@ function downloadJunCSV() {
   a.download = buildFilename().replace(/_PS_.+$/, '') + '_PS_Jun2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
 
+function downloadMayJunCSV() {
+  var csv = buildMonthCSV(getMayJunRows());
+  if (!csv) { alert('No rows found for May–June 2026.'); return; }
+  var blob = new Blob([csv], { type: 'text/csv' });
+  var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = buildFilename().replace(/_PS_.+$/, '') + '_PS_MayJun2026.csv'; a.click(); URL.revokeObjectURL(a.href);
+}
+
 function updateMonthBtns() {
   var mayCount = getMayRows().length;
   var junCount = getJunRows().length;
+  var mayJunCount = mayCount + junCount;
 
   var mayBtn = document.getElementById('may-btn');
   var junBtn = document.getElementById('jun-btn');
+  var mayJunBtn = document.getElementById('mayjun-btn');
   var salesMayBtn = document.getElementById('sales-may-btn');
   var salesJunBtn = document.getElementById('sales-jun-btn');
+  var salesMayJunBtn = document.getElementById('sales-mayjun-btn');
 
   if (mayBtn) {
     mayBtn.disabled = mayCount === 0;
@@ -1138,8 +1167,13 @@ function updateMonthBtns() {
     junBtn.disabled = junCount === 0;
     junBtn.title = junCount > 0 ? 'Download ' + junCount + ' row' + (junCount===1?'':'s') + ' dated 01/06/2026 – 30/06/2026' : 'No rows found for June 2026';
   }
+  if (mayJunBtn) {
+    mayJunBtn.disabled = mayJunCount === 0;
+    mayJunBtn.title = mayJunCount > 0 ? 'Download ' + mayJunCount + ' row' + (mayJunCount===1?'':'s') + ' dated 01/05/2026 – 30/06/2026' : 'No rows found for May–June 2026';
+  }
   if (salesMayBtn) { salesMayBtn.disabled = mayCount === 0; salesMayBtn.title = mayBtn ? mayBtn.title : ''; }
   if (salesJunBtn) { salesJunBtn.disabled = junCount === 0; salesJunBtn.title = junBtn ? junBtn.title : ''; }
+  if (salesMayJunBtn) { salesMayJunBtn.disabled = mayJunCount === 0; salesMayJunBtn.title = mayJunBtn ? mayJunBtn.title : ''; }
 }
 
 // ════════════════════════════════════════════════════════════════════════════
