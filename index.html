@@ -436,7 +436,7 @@ function applyTheme(format) {
   document.getElementById('info-barrister-label').textContent =
     isLex ? 'Barrister(s)' : (isMtd ? 'Files' : (isInv ? 'Barrister' : (isBst ? 'Barrister Code' : (isMtdSl ? 'Files' : 'Barrister'))));
   document.getElementById('vat-src-label').textContent =
-    isLex ? 'LEX VAT (from report totals)' : (isMtd ? 'MTD CB VAT (sum from source)' : (isBar ? 'BarBooks VAT (from Totals sheet)' : (isInv ? 'InvoicesPaid VAT (sum from rows)' : (isBst ? 'BarStat VAT (sum from source)' : (isMtdSl ? 'MTD SL VAT (sum of TaxAmount column)' : 'Meridian VAT (from Barrister Total row)')))));
+    isLex ? 'LEX VAT (from report totals)' : (isMtd ? 'MTD CB VAT (sum from source)' : (isBar ? 'BarBooks VAT (from report totals)' : (isInv ? 'InvoicesPaid VAT (sum from rows)' : (isBst ? 'BarStat VAT (sum from source)' : (isMtdSl ? 'MTD SL VAT (sum of TaxAmount column)' : 'Meridian VAT (from Barrister Total row)')))));
   document.getElementById('src-total-label').textContent =
     isLex ? 'LEX total' : (isMtd ? 'MTD CB total' : (isBar ? 'BarBooks total' : (isInv ? 'InvoicesPaid total' : (isBst ? 'BarStat total' : (isMtdSl ? 'MTD SL total' : 'Meridian total')))));
 }
@@ -1277,6 +1277,21 @@ function parseBarBooks(wb) {
     var headers=raw[headerIdx].map(function(h){return h?String(h).toUpperCase().trim():'';});
     function col(name){var e=headers.findIndex(function(h){return h===name;});return e!==-1?e:headers.findIndex(function(h){return h.indexOf(name)!==-1;});}
     var COL_MATTER=col('MATTER ID'),COL_TITLE=col('MATTER TITLE'),COL_FIRM=col('FIRM'),COL_SOLR=col('SOLICITOR'),COL_INVNO=col('TAX INVOICE NUMBER'),COL_DATE=col('RECEIPT DATE'),COL_VATPCT=col('VAT %'),COL_VAT=col('VAT'),COL_INCL=col('TOTAL (INCL. VAT)');
+    // Fallback: some BarBooks exports embed a TOTALS row at the bottom of the same
+    // data sheet instead of putting it on a separate "Totals" tab. If we haven't
+    // already picked up bbTotalInc/bbVat from a dedicated Totals sheet, scan this
+    // sheet's own rows for one, reusing the columns already detected above.
+    if (bbTotalInc === null) {
+      for (var ti=headerIdx+1;ti<raw.length;ti++) {
+        var trow=raw[ti]; if(!trow) continue;
+        var isTotalsRow=trow.some(function(c){return typeof c==='string'&&c.trim().toUpperCase()==='TOTALS';});
+        if (isTotalsRow) {
+          if (COL_INCL!==-1&&typeof trow[COL_INCL]==='number') bbTotalInc=trow[COL_INCL];
+          if (COL_VAT !==-1&&typeof trow[COL_VAT] ==='number') bbVat=trow[COL_VAT];
+          break;
+        }
+      }
+    }
     for (var i=headerIdx+1;i<raw.length;i++) {
       var row=raw[i]; if(!row) continue;
       var matterId=row[COL_MATTER]; if(!matterId) continue;
