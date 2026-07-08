@@ -308,6 +308,7 @@
       <button class="copy-btn may-btn" id="may-btn" onclick="downloadMayCSV()" title="Download rows dated 01/05/2026 – 31/05/2026 only">&#8659; Bank Xero May 2026</button>
       <button class="copy-btn jun-btn" id="jun-btn" onclick="downloadJunCSV()" title="Download rows dated 01/06/2026 – 30/06/2026 only">&#8659; Bank Xero Jun 2026</button>
       <button class="copy-btn mayjun-btn" id="mayjun-btn" onclick="downloadMayJunCSV()" title="Download rows dated 01/05/2026 – 30/06/2026 only">&#8659; Bank Xero May+Jun 2026</button>
+      <span class="chip" id="mayjun-vat-chip" style="display:none"><span class="chip-label">May+Jun VAT</span><strong id="mayjun-vat-value">—</strong></span>
       <div class="btn-separator"></div>
       <button class="copy-btn sales-btn" onclick="downloadSalesCSV()">&#8659; Sales Xero CSV</button>
       <button class="copy-btn sales-may-btn" id="sales-may-btn" onclick="downloadSalesMayCSV()" title="Download Sales Invoice rows dated 01/05/2026 – 31/05/2026 only">&#8659; Sales Xero May 2026</button>
@@ -1147,10 +1148,15 @@ function downloadMayJunCSV() {
   a.download = buildFilename().replace(/_PS_.+$/, '') + '_PS_MayJun2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
 
+function computeVatForRows(rows) {
+  return round2(rows.reduce(function(s,r){ return r.taxType === '20% (VAT on Income)' ? s + round2(r.amount / 6) : s; }, 0));
+}
+
 function updateMonthBtns() {
   var mayCount = getMayRows().length;
   var junCount = getJunRows().length;
-  var mayJunCount = mayCount + junCount;
+  var mayJunRows = getMayJunRows();
+  var mayJunCount = mayJunRows.length;
 
   var mayBtn = document.getElementById('may-btn');
   var junBtn = document.getElementById('jun-btn');
@@ -1158,6 +1164,17 @@ function updateMonthBtns() {
   var salesMayBtn = document.getElementById('sales-may-btn');
   var salesJunBtn = document.getElementById('sales-jun-btn');
   var salesMayJunBtn = document.getElementById('sales-mayjun-btn');
+  var mayJunVatChip = document.getElementById('mayjun-vat-chip');
+  var mayJunVatValue = document.getElementById('mayjun-vat-value');
+
+  if (mayJunVatChip && mayJunVatValue) {
+    if (mayJunCount > 0) {
+      mayJunVatValue.textContent = fmt(computeVatForRows(mayJunRows));
+      mayJunVatChip.style.display = 'inline-flex';
+    } else {
+      mayJunVatChip.style.display = 'none';
+    }
+  }
 
   if (mayBtn) {
     mayBtn.disabled = mayCount === 0;
