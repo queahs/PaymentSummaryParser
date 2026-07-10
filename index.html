@@ -724,13 +724,23 @@ function parseLexMulti(workbooks, files) {
         var vatOverride = (vatPct >= 0.15) && (Math.abs(effectiveVat) < 0.01);
         if (vatOverride) taxType = 'Zero Rated Income';
         var noVatPct = isNaN(vatPct) && taxType === '20% (VAT on Income)';
-        if (noVatPct && Math.abs(effectiveVat) > 0) {
+        // Standalone VAT-only row: VAT% is populated (not blank) and there's a real
+        // VAT figure, but the AMOUNT (net) column is ~£0 and no matching net-only
+        // partner row was found to merge with (a lone VAT credit/adjustment line).
+        // Treating its TOTAL as a 20%-inclusive gross figure would massively
+        // understate VAT (dividing an already-VAT-only figure by 6 again), so split
+        // it the same way as the empty-VAT% case: a clean 20% line sized so that
+        // VAT × 6 recovers the source VAT exactly, plus a Zero Rated remainder.
+        var isStandaloneVatOnly = !noVatPct && !vatOverride && (vatPct >= 0.15) && (Math.abs(dr.netAmt) < 0.01) && (Math.abs(effectiveVat) > 0.01);
+        if ((noVatPct || isStandaloneVatOnly) && Math.abs(effectiveVat) > 0) {
           var sign = finalAmt < 0 ? -1 : 1, absVat = Math.abs(effectiveVat);
           var cleanAmt = Math.round(absVat * 6 * 100) / 100;
           var adjAmt   = Math.round((Math.abs(finalAmt) - cleanAmt) * 100) / 100;
-          parsedRows.push({ date: fmtDate(row[receivedC]), amount: sign * cleanAmt, description: description + ' | 20% VAT portion (VAT £' + absVat.toFixed(2) + ' × 6)', taxType: '20% (VAT on Income)', reference: isOut ? description : taxno, isOut: isOut, noVatPct: true, taxClass: 'blue' });
+          var portionNote = isStandaloneVatOnly ? ' | 20% VAT-only adjustment (VAT £' + absVat.toFixed(2) + ' × 6)' : ' | 20% VAT portion (VAT £' + absVat.toFixed(2) + ' × 6)';
+          var remainderNote = isStandaloneVatOnly ? ' | Zero Rated remainder of VAT-only adjustment (£' + Math.abs(finalAmt).toFixed(2) + ' − £' + cleanAmt.toFixed(2) + ')' : ' | Zero Rated remainder (£' + Math.abs(finalAmt).toFixed(2) + ' − £' + cleanAmt.toFixed(2) + ')';
+          parsedRows.push({ date: fmtDate(row[receivedC]), amount: sign * cleanAmt, description: description + portionNote, taxType: '20% (VAT on Income)', reference: isOut ? description : taxno, isOut: isOut, noVatPct: true, vatOnlyAdj: isStandaloneVatOnly, taxClass: 'blue' });
           if (Math.abs(adjAmt) >= 0.01) {
-            parsedRows.push({ date: fmtDate(row[receivedC]), amount: sign * adjAmt, description: description + ' | Zero Rated remainder (£' + Math.abs(finalAmt).toFixed(2) + ' − £' + cleanAmt.toFixed(2) + ')', taxType: 'Zero Rated Income', reference: isOut ? description : taxno, isOut: isOut, noVatPct: false, isAdj: true, taxClass: 'blue' });
+            parsedRows.push({ date: fmtDate(row[receivedC]), amount: sign * adjAmt, description: description + remainderNote, taxType: 'Zero Rated Income', reference: isOut ? description : taxno, isOut: isOut, noVatPct: false, isAdj: true, taxClass: 'blue' });
           }
         } else {
           parsedRows.push({ date: fmtDate(row[receivedC]), amount: finalAmt, description: description, taxType: taxType, reference: isOut ? description : taxno, isOut: isOut, noVatPct: false, vatOverride: vatOverride, taxClass: 'blue' });
@@ -763,7 +773,8 @@ function parseLexMulti(workbooks, files) {
     vatBadge.className   = 'match-badge ' + (vm ? 'ok' : 'err');
   } else { vatBadge.textContent = 'LEX VAT not found'; vatBadge.className = 'match-badge err'; }
 
-  var noVatPctRows    = parsedRows.filter(function(r){ return r.noVatPct; });
+  var noVatPctRows    = parsedRows.filter(function(r){ return r.noVatPct && !r.vatOnlyAdj; });
+  var vatOnlyAdjRows  = parsedRows.filter(function(r){ return r.vatOnlyAdj; });
   var vatOverrideRows = parsedRows.filter(function(r){ return r.vatOverride; });
   var mergedRows      = parsedRows.filter(function(r){ return r.isMerged; });
   var vatWarn = document.getElementById('vat-warning');
@@ -771,6 +782,7 @@ function parseLexMulti(workbooks, files) {
   if (mergedRows.length > 0)      warnParts.push('\u2139 ' + mergedRows.length + ' row' + (mergedRows.length > 1 ? 's have' : ' has') + ' been merged from split net/VAT pairs. See amber rows.');
   if (vatOverrideRows.length > 0) warnParts.push('⚠ ' + vatOverrideRows.length + ' row' + (vatOverrideRows.length > 1 ? 's have' : ' has') + ' VAT% = 20 but £0 VAT recorded — treated as Zero Rated Income.');
   if (noVatPctRows.length > 0)    warnParts.push('⚠ ' + noVatPctRows.length + ' row' + (noVatPctRows.length > 1 ? 's have' : ' has') + ' an empty VAT% — split into a 20% line (VAT amount × 6) and a Zero Rated remainder. See blue highlighted rows.');
+  if (vatOnlyAdjRows.length > 0)  warnParts.push('⚠ ' + vatOnlyAdjRows.length + ' row' + (vatOnlyAdjRows.length > 1 ? 's are' : ' is') + ' a standalone VAT-only adjustment (£0 net, VAT populated, no matching net row) — split into a 20% line (VAT amount × 6) and a Zero Rated remainder so the VAT check stays accurate. See blue highlighted rows.');
   if (warnParts.length > 0) { vatWarn.innerHTML = warnParts.join('<br>'); vatWarn.style.display = 'block'; } else { vatWarn.style.display = 'none'; }
 
   var uniqueBarristers = allBarristers.filter(function(v,i,a){ return a.indexOf(v) === i; });
