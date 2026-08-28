@@ -21,6 +21,7 @@
     --inv-accent: #e879f9;
     --bst-accent: #34d399;
     --mtdsl-accent: #f59e0b;
+    --lamb-accent: #22d3ee;
     --slate: #94a3b8; --amber: #fbbf24;
   }
   body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Mono','Courier New',monospace; min-height: 100vh; padding: 2.5rem 2rem; }
@@ -51,6 +52,8 @@
   .format-badge.bst .dot { background: var(--bst-accent); }
   .format-badge.mtdsl { display: inline-flex; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.4); color: var(--mtdsl-accent); }
   .format-badge.mtdsl .dot { background: var(--mtdsl-accent); }
+  .format-badge.lamb { display: inline-flex; background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.4); color: var(--lamb-accent); }
+  .format-badge.lamb .dot { background: var(--lamb-accent); }
 
   .control-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; }
   .ctrl-label { font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
@@ -152,6 +155,7 @@
   .blue   { color: var(--lex-accent); }
   .green  { color: var(--bst-accent); }
   .gold   { color: var(--mtdsl-accent); }
+  .cyan   { color: var(--lamb-accent); }
   .amber  { color: var(--amber); }
   .desc { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   tfoot tr { background: var(--bg2); border-top: 2px solid var(--border2); }
@@ -170,7 +174,7 @@
   <header>
     <div class="tag" id="hdr-tag">LEX &amp; Meridian</div>
     <h1>Payment Summary Parser</h1>
-    <p class="subtitle" id="hdr-sub">Supports LEX &amp; Meridian (up to 3 .xlsx files each), BarBooks, InvoicesPaid (.xlsx/.xls), MTD CB, MTD SL (.csv, up to 3 files) and BarStat (.csv) — format detected automatically</p>
+    <p class="subtitle" id="hdr-sub">Supports LEX &amp; Meridian (up to 3 .xlsx files each), BarBooks, InvoicesPaid (.xlsx/.xls), Lamb Chambers Revenue Breakdown (.xlsx), MTD CB, MTD SL (.csv, up to 3 files) and BarStat (.csv) — format detected automatically</p>
   </header>
 
   <div class="format-badge-wrap">
@@ -227,6 +231,7 @@
       <option value="Henderson Chambers">Henderson Chambers</option>
       <option value="Keating Chambers">Keating Chambers</option>
       <option value="Kings Chambers">Kings Chambers</option>
+      <option value="Lamb Chambers">Lamb Chambers</option>
       <option value="Landmark Chambers">Landmark Chambers</option>
       <option value="Littleton Chambers">Littleton Chambers</option>
       <option value="Maitland Chambers">Maitland Chambers</option>
@@ -256,8 +261,8 @@
   <input type="file" id="file-input" accept=".xlsx,.xls,.csv" multiple style="display:none">
   <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()">
     <div class="drop-icon">📂</div>
-    <div class="drop-label" id="drop-label">Drop LEX, BarBooks, Meridian, InvoicesPaid, MTD CB, MTD SL or BarStat files here, or click to browse</div>
-    <div class="drop-hint">.xlsx / .xls — LEX &amp; Meridian accept up to 3 files each &middot; .csv — MTD CB / MTD SL up to 3 files, BarStat single file</div>
+    <div class="drop-label" id="drop-label">Drop LEX, BarBooks, Meridian, InvoicesPaid, Lamb Chambers, MTD CB, MTD SL or BarStat files here, or click to browse</div>
+    <div class="drop-hint">.xlsx / .xls — LEX &amp; Meridian accept up to 3 files each, BarBooks / InvoicesPaid / Lamb Chambers single file &middot; .csv — MTD CB / MTD SL up to 3 files, BarStat single file</div>
   </div>
 
   <div class="error" id="err"></div>
@@ -305,15 +310,15 @@
       <button class="copy-btn" id="copy-btn" onclick="copyCSV()">&#9003; Copy CSV</button>
       <div class="btn-separator"></div>
       <button class="copy-btn bank-btn" onclick="downloadCSV()">&#8659; Bank Xero CSV</button>
-      <button class="copy-btn may-btn" id="may-btn" onclick="downloadMayCSV()" title="Download rows dated 01/05/2026 – 31/05/2026 only">&#8659; Bank Xero May 2026</button>
-      <button class="copy-btn jun-btn" id="jun-btn" onclick="downloadJunCSV()" title="Download rows dated 01/06/2026 – 30/06/2026 only">&#8659; Bank Xero Jun 2026</button>
-      <button class="copy-btn mayjun-btn" id="mayjun-btn" onclick="downloadMayJunCSV()" title="Download rows dated 01/05/2026 – 30/06/2026 only">&#8659; Bank Xero May+Jun 2026</button>
-      <span class="chip" id="mayjun-vat-chip" style="display:none"><span class="chip-label">May+Jun VAT</span><strong id="mayjun-vat-value">—</strong></span>
+      <button class="copy-btn may-btn" id="may-btn" onclick="downloadMayCSV()" title="Download rows dated 01/07/2026 – 31/07/2026 only">&#8659; Bank Xero Jul 2026</button>
+      <button class="copy-btn jun-btn" id="jun-btn" onclick="downloadJunCSV()" title="Download rows dated 01/08/2026 – 31/08/2026 only">&#8659; Bank Xero Aug 2026</button>
+      <button class="copy-btn mayjun-btn" id="mayjun-btn" onclick="downloadMayJunCSV()" title="Download rows dated 01/07/2026 – 31/08/2026 only">&#8659; Bank Xero Jul+Aug 2026</button>
+      <span class="chip" id="mayjun-vat-chip" style="display:none"><span class="chip-label">Jul+Aug VAT</span><strong id="mayjun-vat-value">—</strong></span>
       <div class="btn-separator"></div>
       <button class="copy-btn sales-btn" onclick="downloadSalesCSV()">&#8659; Sales Xero CSV</button>
-      <button class="copy-btn sales-may-btn" id="sales-may-btn" onclick="downloadSalesMayCSV()" title="Download Sales Invoice rows dated 01/05/2026 – 31/05/2026 only">&#8659; Sales Xero May 2026</button>
-      <button class="copy-btn sales-jun-btn" id="sales-jun-btn" onclick="downloadSalesJunCSV()" title="Download Sales Invoice rows dated 01/06/2026 – 30/06/2026 only">&#8659; Sales Xero Jun 2026</button>
-      <button class="copy-btn sales-mayjun-btn" id="sales-mayjun-btn" onclick="downloadSalesMayJunCSV()" title="Download Sales Invoice rows dated 01/05/2026 – 30/06/2026 only">&#8659; Sales Xero May+Jun 2026</button>
+      <button class="copy-btn sales-may-btn" id="sales-may-btn" onclick="downloadSalesMayCSV()" title="Download Sales Invoice rows dated 01/07/2026 – 31/07/2026 only">&#8659; Sales Xero Jul 2026</button>
+      <button class="copy-btn sales-jun-btn" id="sales-jun-btn" onclick="downloadSalesJunCSV()" title="Download Sales Invoice rows dated 01/08/2026 – 31/08/2026 only">&#8659; Sales Xero Aug 2026</button>
+      <button class="copy-btn sales-mayjun-btn" id="sales-mayjun-btn" onclick="downloadSalesMayJunCSV()" title="Download Sales Invoice rows dated 01/07/2026 – 31/08/2026 only">&#8659; Sales Xero Jul+Aug 2026</button>
     </div>
 
     <div class="legend" id="legend" style="display:none">
@@ -407,9 +412,10 @@ function applyTheme(format) {
   var isInv   = format === 'inv';
   var isBst   = format === 'bst';
   var isMtdSl = format === 'mtdsl';
+  var isLamb  = format === 'lamb';
 
-  var accentHex = isLex ? '#4a9eff' : (isMtd ? '#2dd4bf' : (isBar ? '#f97316' : (isInv ? '#e879f9' : (isBst ? '#34d399' : (isMtdSl ? '#f59e0b' : '#a78bfa')))));
-  var accentRgba = isLex ? 'rgba(74,158,255,0.05)' : (isMtd ? 'rgba(45,212,191,0.05)' : (isBar ? 'rgba(249,115,22,0.05)' : (isInv ? 'rgba(232,121,249,0.05)' : (isBst ? 'rgba(52,211,153,0.05)' : (isMtdSl ? 'rgba(245,158,11,0.05)' : 'rgba(167,139,250,0.05)')))));
+  var accentHex = isLex ? '#4a9eff' : (isMtd ? '#2dd4bf' : (isBar ? '#f97316' : (isInv ? '#e879f9' : (isBst ? '#34d399' : (isMtdSl ? '#f59e0b' : (isLamb ? '#22d3ee' : '#a78bfa'))))));
+  var accentRgba = isLex ? 'rgba(74,158,255,0.05)' : (isMtd ? 'rgba(45,212,191,0.05)' : (isBar ? 'rgba(249,115,22,0.05)' : (isInv ? 'rgba(232,121,249,0.05)' : (isBst ? 'rgba(52,211,153,0.05)' : (isMtdSl ? 'rgba(245,158,11,0.05)' : (isLamb ? 'rgba(34,211,238,0.05)' : 'rgba(167,139,250,0.05)'))))));
 
   document.documentElement.style.setProperty('--accent', accentHex);
   var styleEl = document.getElementById('dynamic-style');
@@ -419,9 +425,9 @@ function applyTheme(format) {
   var badge = document.getElementById('format-badge');
   badge.className = 'format-badge ' + format;
   document.getElementById('format-badge-text').textContent =
-    isLex ? 'LEX detected' : (isMtd ? 'MTD CB detected' : (isBar ? 'BarBooks detected' : (isInv ? 'InvoicesPaid detected' : (isBst ? 'BarStat detected' : (isMtdSl ? 'MTD SL detected' : 'Meridian detected')))));
+    isLex ? 'LEX detected' : (isMtd ? 'MTD CB detected' : (isBar ? 'BarBooks detected' : (isInv ? 'InvoicesPaid detected' : (isBst ? 'BarStat detected' : (isMtdSl ? 'MTD SL detected' : (isLamb ? 'Lamb Chambers detected' : 'Meridian detected'))))));
   document.getElementById('hdr-tag').textContent =
-    isLex ? 'LEX' : (isMtd ? 'MTD CB' : (isBar ? 'BarBooks' : (isInv ? 'InvoicesPaid' : (isBst ? 'BarStat' : (isMtdSl ? 'MTD SL' : 'Meridian')))));
+    isLex ? 'LEX' : (isMtd ? 'MTD CB' : (isBar ? 'BarBooks' : (isInv ? 'InvoicesPaid' : (isBst ? 'BarStat' : (isMtdSl ? 'MTD SL' : (isLamb ? 'Lamb Chambers' : 'Meridian'))))));
 
   var copyBtn = document.getElementById('copy-btn');
   if (isLex)        { copyBtn.style.background='#1a3a6e'; copyBtn.style.borderColor='#2a5298'; copyBtn.style.color='#7ab3ff'; }
@@ -430,16 +436,17 @@ function applyTheme(format) {
   else if (isInv)   { copyBtn.style.background='#2e0a2e'; copyBtn.style.borderColor='#7a1a7a'; copyBtn.style.color='#f0abfc'; }
   else if (isBst)   { copyBtn.style.background='#0a2e1a'; copyBtn.style.borderColor='#1a7a4a'; copyBtn.style.color='#6ee7b7'; }
   else if (isMtdSl) { copyBtn.style.background='#2e1f0a'; copyBtn.style.borderColor='#7a5010'; copyBtn.style.color='#fcd34d'; }
+  else if (isLamb)  { copyBtn.style.background='#0a2a2e'; copyBtn.style.borderColor='#0e6a78'; copyBtn.style.color='#67e8f9'; }
   else              { copyBtn.style.background='#2a1a6e'; copyBtn.style.borderColor='#4a2aae'; copyBtn.style.color='#c4b5fd'; }
 
   document.getElementById('info-grid').style.display = 'grid';
   document.getElementById('legend').style.display    = (format === 'meridian') ? 'flex' : 'none';
   document.getElementById('info-barrister-label').textContent =
-    isLex ? 'Barrister(s)' : (isMtd ? 'Files' : (isInv ? 'Barrister' : (isBst ? 'Barrister Code' : (isMtdSl ? 'Files' : 'Barrister'))));
+    isLex ? 'Barrister(s)' : (isMtd ? 'Files' : (isInv ? 'Barrister' : (isBst ? 'Barrister Code' : (isMtdSl ? 'Files' : (isLamb ? 'Barrister(s)' : 'Barrister')))));
   document.getElementById('vat-src-label').textContent =
-    isLex ? 'LEX VAT (from report totals)' : (isMtd ? 'MTD CB VAT (sum from source)' : (isBar ? 'BarBooks VAT (from report totals)' : (isInv ? 'InvoicesPaid VAT (sum from rows)' : (isBst ? 'BarStat VAT (sum from source)' : (isMtdSl ? 'MTD SL VAT (sum of TaxAmount column)' : 'Meridian VAT (from Barrister Total row)')))));
+    isLex ? 'LEX VAT (from report totals)' : (isMtd ? 'MTD CB VAT (sum from source)' : (isBar ? 'BarBooks VAT (from report totals)' : (isInv ? 'InvoicesPaid VAT (sum from rows)' : (isBst ? 'BarStat VAT (sum from source)' : (isMtdSl ? 'MTD SL VAT (sum of TaxAmount column)' : (isLamb ? 'Lamb Chambers VAT (from Revenue total row)' : 'Meridian VAT (from Barrister Total row)'))))));
   document.getElementById('src-total-label').textContent =
-    isLex ? 'LEX total' : (isMtd ? 'MTD CB total' : (isBar ? 'BarBooks total' : (isInv ? 'InvoicesPaid total' : (isBst ? 'BarStat total' : (isMtdSl ? 'MTD SL total' : 'Meridian total')))));
+    isLex ? 'LEX total' : (isMtd ? 'MTD CB total' : (isBar ? 'BarBooks total' : (isInv ? 'InvoicesPaid total' : (isBst ? 'BarStat total' : (isMtdSl ? 'MTD SL total' : (isLamb ? 'Lamb Chambers total' : 'Meridian total'))))));
 }
 
 // ── Format detection ───────────────────────────────────────────────────────
@@ -465,6 +472,12 @@ function detectFormat(wb) {
     return rows.some(function(r) { return r && r.some(function(c) { return typeof c === 'string' && c.trim() === 'Invoice Reference'; }); });
   });
   if (hasInv) return 'inv';
+
+  var hasLamb = wb.SheetNames.some(function(n) {
+    var rows = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, defval: null });
+    return rows.some(function(r) { return r && r.some(function(c) { return typeof c === 'string' && c.trim().toUpperCase() === 'FEES RUN NO.'; }); });
+  });
+  if (hasLamb) return 'lamb';
 
   var hasMeridian = wb.SheetNames.some(function(n) {
     var rows = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, defval: null, raw: true });
@@ -562,7 +575,9 @@ function processWorkbooks(workbooks, files) {
   var format = uniqueFormats[0];
 
   if (format !== 'lex' && format !== 'meridian' && workbooks.length > 1) {
-    showErr(format.charAt(0).toUpperCase() + format.slice(1) + ' format only supports a single file at a time.');
+    var displayNames = { bar: 'BarBooks', inv: 'InvoicesPaid', lamb: 'Lamb Chambers' };
+    var friendlyName = displayNames[format] || (format.charAt(0).toUpperCase() + format.slice(1));
+    showErr(friendlyName + ' format only supports a single file at a time.');
     return;
   }
 
@@ -571,6 +586,7 @@ function processWorkbooks(workbooks, files) {
   else if (format === 'meridian') parseMeridianMulti(workbooks, files);
   else if (format === 'bar')      parseBarBooks(workbooks[0]);
   else if (format === 'inv')      parseInvoicesPaid(workbooks[0]);
+  else if (format === 'lamb')     parseLambChambers(workbooks[0]);
 }
 
 function parseFile(file) { parseFiles([file]); }
@@ -724,13 +740,6 @@ function parseLexMulti(workbooks, files) {
         var vatOverride = (vatPct >= 0.15) && (Math.abs(effectiveVat) < 0.01);
         if (vatOverride) taxType = 'Zero Rated Income';
         var noVatPct = isNaN(vatPct) && taxType === '20% (VAT on Income)';
-        // Standalone VAT-only row: VAT% is populated (not blank) and there's a real
-        // VAT figure, but the AMOUNT (net) column is ~£0 and no matching net-only
-        // partner row was found to merge with (a lone VAT credit/adjustment line).
-        // Treating its TOTAL as a 20%-inclusive gross figure would massively
-        // understate VAT (dividing an already-VAT-only figure by 6 again), so split
-        // it the same way as the empty-VAT% case: a clean 20% line sized so that
-        // VAT × 6 recovers the source VAT exactly, plus a Zero Rated remainder.
         var isStandaloneVatOnly = !noVatPct && !vatOverride && (vatPct >= 0.15) && (Math.abs(dr.netAmt) < 0.01) && (Math.abs(effectiveVat) > 0.01);
         if ((noVatPct || isStandaloneVatOnly) && Math.abs(effectiveVat) > 0) {
           var sign = finalAmt < 0 ? -1 : 1, absVat = Math.abs(effectiveVat);
@@ -1083,29 +1092,29 @@ function downloadSalesCSV() {
 
 function downloadSalesMayCSV() {
   var rows = getMayRows();
-  if (!rows.length) { alert('No rows found for May 2026.'); return; }
+  if (!rows.length) { alert('No rows found for July 2026.'); return; }
   var csv = buildSalesCSVFromRows(rows);
   var blob = new Blob([csv], { type: 'text/csv' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = buildFilename().replace(/_PS_.+$/, '') + '_SI_May2026.csv'; a.click(); URL.revokeObjectURL(a.href);
+  a.download = buildFilename().replace(/_PS_.+$/, '') + '_SI_Jul2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
 
 function downloadSalesJunCSV() {
   var rows = getJunRows();
-  if (!rows.length) { alert('No rows found for June 2026.'); return; }
+  if (!rows.length) { alert('No rows found for August 2026.'); return; }
   var csv = buildSalesCSVFromRows(rows);
   var blob = new Blob([csv], { type: 'text/csv' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = buildFilename().replace(/_PS_.+$/, '') + '_SI_Jun2026.csv'; a.click(); URL.revokeObjectURL(a.href);
+  a.download = buildFilename().replace(/_PS_.+$/, '') + '_SI_Aug2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
 
 function downloadSalesMayJunCSV() {
   var rows = getMayJunRows();
-  if (!rows.length) { alert('No rows found for May–June 2026.'); return; }
+  if (!rows.length) { alert('No rows found for July–August 2026.'); return; }
   var csv = buildSalesCSVFromRows(rows);
   var blob = new Blob([csv], { type: 'text/csv' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = buildFilename().replace(/_PS_.+$/, '') + '_SI_MayJun2026.csv'; a.click(); URL.revokeObjectURL(a.href);
+  a.download = buildFilename().replace(/_PS_.+$/, '') + '_SI_JulAug2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
 
 // ── Month filters ──────────────────────────────────────────────────────────
@@ -1116,9 +1125,9 @@ function isMonthYear(dateStr, month, year) {
   if (yr < 100) yr += 2000;
   return mo === month && yr === year;
 }
-function getMayRows() { return parsedRows.filter(function(r){ return isMonthYear(r.date, 5, 2026); }); }
-function getJunRows() { return parsedRows.filter(function(r){ return isMonthYear(r.date, 6, 2026); }); }
-function getMayJunRows() { return parsedRows.filter(function(r){ return isMonthYear(r.date, 5, 2026) || isMonthYear(r.date, 6, 2026); }); }
+function getMayRows() { return parsedRows.filter(function(r){ return isMonthYear(r.date, 7, 2026); }); }
+function getJunRows() { return parsedRows.filter(function(r){ return isMonthYear(r.date, 8, 2026); }); }
+function getMayJunRows() { return parsedRows.filter(function(r){ return isMonthYear(r.date, 7, 2026) || isMonthYear(r.date, 8, 2026); }); }
 
 function buildMonthCSV(rows) {
   if (!rows.length) return null;
@@ -1138,26 +1147,26 @@ function buildMonthCSV(rows) {
 
 function downloadMayCSV() {
   var csv = buildMonthCSV(getMayRows());
-  if (!csv) { alert('No rows found for May 2026.'); return; }
+  if (!csv) { alert('No rows found for July 2026.'); return; }
   var blob = new Blob([csv], { type: 'text/csv' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = buildFilename().replace(/_PS_.+$/, '') + '_PS_May2026.csv'; a.click(); URL.revokeObjectURL(a.href);
+  a.download = buildFilename().replace(/_PS_.+$/, '') + '_PS_Jul2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
 
 function downloadJunCSV() {
   var csv = buildMonthCSV(getJunRows());
-  if (!csv) { alert('No rows found for June 2026.'); return; }
+  if (!csv) { alert('No rows found for August 2026.'); return; }
   var blob = new Blob([csv], { type: 'text/csv' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = buildFilename().replace(/_PS_.+$/, '') + '_PS_Jun2026.csv'; a.click(); URL.revokeObjectURL(a.href);
+  a.download = buildFilename().replace(/_PS_.+$/, '') + '_PS_Aug2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
 
 function downloadMayJunCSV() {
   var csv = buildMonthCSV(getMayJunRows());
-  if (!csv) { alert('No rows found for May–June 2026.'); return; }
+  if (!csv) { alert('No rows found for July–August 2026.'); return; }
   var blob = new Blob([csv], { type: 'text/csv' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
-  a.download = buildFilename().replace(/_PS_.+$/, '') + '_PS_MayJun2026.csv'; a.click(); URL.revokeObjectURL(a.href);
+  a.download = buildFilename().replace(/_PS_.+$/, '') + '_PS_JulAug2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
 
 function computeVatForRows(rows) {
@@ -1190,15 +1199,15 @@ function updateMonthBtns() {
 
   if (mayBtn) {
     mayBtn.disabled = mayCount === 0;
-    mayBtn.title = mayCount > 0 ? 'Download ' + mayCount + ' row' + (mayCount===1?'':'s') + ' dated 01/05/2026 – 31/05/2026' : 'No rows found for May 2026';
+    mayBtn.title = mayCount > 0 ? 'Download ' + mayCount + ' row' + (mayCount===1?'':'s') + ' dated 01/07/2026 – 31/07/2026' : 'No rows found for July 2026';
   }
   if (junBtn) {
     junBtn.disabled = junCount === 0;
-    junBtn.title = junCount > 0 ? 'Download ' + junCount + ' row' + (junCount===1?'':'s') + ' dated 01/06/2026 – 30/06/2026' : 'No rows found for June 2026';
+    junBtn.title = junCount > 0 ? 'Download ' + junCount + ' row' + (junCount===1?'':'s') + ' dated 01/08/2026 – 31/08/2026' : 'No rows found for August 2026';
   }
   if (mayJunBtn) {
     mayJunBtn.disabled = mayJunCount === 0;
-    mayJunBtn.title = mayJunCount > 0 ? 'Download ' + mayJunCount + ' row' + (mayJunCount===1?'':'s') + ' dated 01/05/2026 – 30/06/2026' : 'No rows found for May–June 2026';
+    mayJunBtn.title = mayJunCount > 0 ? 'Download ' + mayJunCount + ' row' + (mayJunCount===1?'':'s') + ' dated 01/07/2026 – 31/08/2026' : 'No rows found for July–August 2026';
   }
   if (salesMayBtn) { salesMayBtn.disabled = mayCount === 0; salesMayBtn.title = mayBtn ? mayBtn.title : ''; }
   if (salesJunBtn) { salesJunBtn.disabled = junCount === 0; salesJunBtn.title = junBtn ? junBtn.title : ''; }
@@ -1306,10 +1315,6 @@ function parseBarBooks(wb) {
     var headers=raw[headerIdx].map(function(h){return h?String(h).toUpperCase().trim():'';});
     function col(name){var e=headers.findIndex(function(h){return h===name;});return e!==-1?e:headers.findIndex(function(h){return h.indexOf(name)!==-1;});}
     var COL_MATTER=col('MATTER ID'),COL_TITLE=col('MATTER TITLE'),COL_FIRM=col('FIRM'),COL_SOLR=col('SOLICITOR'),COL_INVNO=col('TAX INVOICE NUMBER'),COL_DATE=col('RECEIPT DATE'),COL_VATPCT=col('VAT %'),COL_VAT=col('VAT'),COL_INCL=col('TOTAL (INCL. VAT)');
-    // Fallback: some BarBooks exports embed a TOTALS row at the bottom of the same
-    // data sheet instead of putting it on a separate "Totals" tab. If we haven't
-    // already picked up bbTotalInc/bbVat from a dedicated Totals sheet, scan this
-    // sheet's own rows for one, reusing the columns already detected above.
     if (bbTotalInc === null) {
       for (var ti=headerIdx+1;ti<raw.length;ti++) {
         var trow=raw[ti]; if(!trow) continue;
@@ -1356,6 +1361,135 @@ function parseBarBooks(wb) {
   if(bbVat!==null){var vm=Math.abs(ourVat-bbVat)<0.02;vatBadge.textContent=vm?'\u2713 VAT matches':'\u2717 Difference: '+fmt(ourVat-bbVat);vatBadge.className='match-badge '+(vm?'ok':'err');}
   else{vatBadge.textContent='BarBooks VAT not found';vatBadge.className='match-badge err';}
   renderResults(bbTotalInc, bbSheets.join(', '), 'All amounts are payments in (positive)');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// LAMB CHAMBERS REVENUE BREAKDOWN PARSER  (single workbook)
+// ════════════════════════════════════════════════════════════════════════════
+function convertLambPeriod(str) {
+  if (!str) return '';
+  var months = {jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
+  var re = /(\d{1,2})\s+([A-Za-z]{3,})\s+(\d{4})/g;
+  return str.replace(re, function(whole, d, mon, y) {
+    var mm = months[mon.toLowerCase().slice(0,3)];
+    return mm ? (d.padStart(2,'0') + '/' + mm + '/' + y) : whole;
+  });
+}
+
+function parseLambChambers(wb) {
+  var targetSheet = null;
+  for (var si = 0; si < wb.SheetNames.length; si++) {
+    var sn = wb.SheetNames[si];
+    var rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: null });
+    if (rows.some(function(r){ return r && r.some(function(c){ return typeof c === 'string' && c.trim().toUpperCase() === 'FEES RUN NO.'; }); })) { targetSheet = sn; break; }
+  }
+  if (!targetSheet) { showErr('Could not find a Lamb Chambers Revenue Breakdown sheet (no "Fees Run No." column).'); return; }
+
+  var ws  = wb.Sheets[targetSheet];
+  var raw = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null, raw: true });
+
+  // "Report period" label row, e.g. "01 Jul 2026 to 31 Jul 2026"
+  var lambPeriodRaw = '';
+  for (var i = 0; i < Math.min(10, raw.length); i++) {
+    var r = raw[i]; if (!r) continue;
+    if (typeof r[0] === 'string' && r[0].trim().toLowerCase() === 'report period' && r[1]) {
+      lambPeriodRaw = String(r[1]).trim();
+      break;
+    }
+  }
+  var convertedPeriod = convertLambPeriod(lambPeriodRaw);
+
+  var headerIdx = -1;
+  for (var i = 0; i < raw.length; i++) {
+    if (raw[i] && raw[i].some(function(c){ return typeof c === 'string' && c.trim().toUpperCase() === 'FEES RUN NO.'; })) { headerIdx = i; break; }
+  }
+  if (headerIdx === -1) { showErr('Could not find header row in Lamb Chambers file.'); return; }
+
+  var headers = raw[headerIdx].map(function(h){ return h ? String(h).toUpperCase().trim() : ''; });
+  function colExact(name) { return headers.indexOf(name); }
+  var COL_BAR     = colExact('BARRISTER'), COL_ID = colExact('ID'), COL_RUN = colExact('FEES RUN NO.'),
+      COL_CASEREF = colExact('CASE REF'),  COL_TITLE = colExact('CASE TITLE'), COL_DATE = colExact('DATE'),
+      COL_ELEMENT = colExact('ELEMENT'),   COL_NET = colExact('NET'), COL_VAT = colExact('VAT'), COL_GROSS = colExact('GROSS');
+
+  parsedRows = [];
+  var allBarristers = [], allCodes = [];
+  var lambTotalGross = null, lambTotalVat = null;
+
+  for (var i = headerIdx + 1; i < raw.length; i++) {
+    var row = raw[i]; if (!row) continue;
+    var caseRefVal = COL_CASEREF !== -1 ? row[COL_CASEREF] : null;
+    var elementVal = COL_ELEMENT !== -1 && row[COL_ELEMENT] ? String(row[COL_ELEMENT]).trim() : '';
+
+    // Footer/summary rows carry no Case Ref but do carry an Element label
+    // (e.g. "Fees", "Expenses", "Revenue total") — capture the grand total here.
+    if (!caseRefVal) {
+      if (/^revenue total$/i.test(elementVal)) {
+        if (COL_GROSS !== -1 && typeof row[COL_GROSS] === 'number') lambTotalGross = row[COL_GROSS];
+        if (COL_VAT   !== -1 && typeof row[COL_VAT]   === 'number') lambTotalVat   = row[COL_VAT];
+      }
+      continue;
+    }
+
+    var barrister = COL_BAR !== -1 && row[COL_BAR] ? String(row[COL_BAR]).trim() : '';
+    var idCode    = COL_ID  !== -1 && row[COL_ID]  ? String(row[COL_ID]).trim()  : '';
+    if (barrister) allBarristers.push(barrister);
+    if (idCode)    allCodes.push(idCode);
+
+    var gross = COL_GROSS !== -1 && typeof row[COL_GROSS] === 'number' ? row[COL_GROSS] : 0;
+    if (gross === 0) continue;
+    var vat = COL_VAT !== -1 && typeof row[COL_VAT] === 'number' ? row[COL_VAT] : 0;
+    var taxType = Math.abs(vat) > 0.009 ? '20% (VAT on Income)' : 'Zero Rated Income';
+
+    var dateStr = fmtDate(COL_DATE !== -1 ? row[COL_DATE] : null);
+    var runNo   = COL_RUN   !== -1 && row[COL_RUN]   ? String(row[COL_RUN]).trim()   : '';
+    var caseRef = String(caseRefVal).trim();
+    var title   = COL_TITLE !== -1 && row[COL_TITLE] ? String(row[COL_TITLE]).trim() : '';
+    var elementLabel = elementVal.replace(/^Revenue\s*\(/i,'').replace(/\)$/,'').trim();
+
+    var descParts = [caseRef, title, elementLabel].filter(Boolean);
+
+    parsedRows.push({
+      date: dateStr,
+      amount: round2(gross),
+      description: descParts.join(' | '),
+      taxType: taxType,
+      reference: runNo,
+      rowClass: gross < 0 ? 'row-out' : 'row-in',
+      vatOverride: false,
+      taxClass: 'cyan'
+    });
+  }
+
+  if (!parsedRows.length) { showErr('No revenue rows found. Check this is a Lamb Chambers Revenue Breakdown export.'); return; }
+
+  var uniqueBarristers = allBarristers.filter(function(v,i,a){ return a.indexOf(v) === i; });
+  var uniqueCodes      = allCodes.filter(function(v,i,a){ return a.indexOf(v) === i; });
+  var displayBarrister = uniqueBarristers.join(' · ') || targetSheet;
+
+  reportBarrister = displayBarrister;
+  reportPeriod    = convertedPeriod;
+  reportCode      = uniqueCodes.join('_') || targetSheet;
+
+  document.getElementById('info-barrister').textContent = displayBarrister;
+  document.getElementById('info-period').textContent    = convertedPeriod || lambPeriodRaw || '—';
+  document.getElementById('info-records').textContent   = targetSheet;
+  document.getElementById('info-grid').style.display    = 'grid';
+
+  lambTotalGross = lambTotalGross !== null ? round2(lambTotalGross) : null;
+  lambTotalVat   = lambTotalVat   !== null ? round2(lambTotalVat)   : null;
+
+  var ourVat = round2(parsedRows.reduce(function(s,r){ return r.taxType === '20% (VAT on Income)' ? s + round2(r.amount / 6) : s; }, 0));
+  document.getElementById('vat-ours').textContent = fmt(ourVat);
+  document.getElementById('vat-src').textContent  = lambTotalVat !== null ? fmt(lambTotalVat) : 'n/a';
+  var vatBadge = document.getElementById('vat-badge');
+  if (lambTotalVat !== null) {
+    var vm = Math.abs(ourVat - lambTotalVat) < 0.02;
+    vatBadge.textContent = vm ? '✓ VAT matches' : '✗ Difference: ' + fmt(ourVat - lambTotalVat);
+    vatBadge.className   = 'match-badge ' + (vm ? 'ok' : 'err');
+  } else { vatBadge.textContent = 'Lamb Chambers VAT not found'; vatBadge.className = 'match-badge err'; }
+  document.getElementById('vat-warning').style.display = 'none';
+
+  renderResults(lambTotalGross, targetSheet, 'All amounts are Gross (Net + VAT) · Fees and Expenses combined');
 }
 
 // ════════════════════════════════════════════════════════════════════════════
