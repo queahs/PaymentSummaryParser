@@ -373,6 +373,74 @@ function fmtDate(val) {
   return String(val);
 }
 
+// Detects when two "candidate" sheets in the same workbook hold the same underlying
+// case/matter data (e.g. a raw "Accounting" export that repeats every row already
+// shown on a per-barrister sheet), so the duplicate can be excluded before parsing —
+// otherwise every row on it gets counted a second time and totals/VAT are inflated.
+// idColMatch = the header text used to find the id column (e.g. 'CASE ID', 'MATTER ID').
+function dedupeSheetsByIdColumn(wb, sheetNames, idColMatch) {
+  if (sheetNames.length < 2) return { keep: sheetNames.slice(), dropped: [] };
+
+  var totalsRowPattern = /total\s*pyt|pyt\s*total|total\s*payments?|^totals?\s*\(|^totals?$/i;
+
+  function sheetInfo(sn) {
+    var raw = XLSX.utils.sheet_to_json(wb.Sheets[sn], { header: 1, defval: null });
+    var headerIdx = -1;
+    for (var i = 0; i < raw.length; i++) {
+      if (raw[i] && raw[i].some(function(c){ return typeof c === 'string' && c.toUpperCase().indexOf(idColMatch) !== -1; })) { headerIdx = i; break; }
+    }
+    var idSet = [], hasTotals = false;
+    if (headerIdx !== -1) {
+      var headers = raw[headerIdx].map(function(h){ return h ? String(h).toUpperCase().trim() : ''; });
+      var idExact = headers.findIndex(function(h){ return h === idColMatch; });
+      var idCol   = idExact !== -1 ? idExact : headers.findIndex(function(h){ return h.indexOf(idColMatch) !== -1; });
+      var ids = {};
+      for (var i = headerIdx + 1; i < raw.length; i++) {
+        var row = raw[i]; if (!row) continue;
+        var v = row[idCol]; if (v === null || v === undefined || v === '') continue;
+        var s = String(v).trim(); if (!s || s.toUpperCase() === idColMatch) continue;
+        ids[s] = true;
+      }
+      // A "totals" row (e.g. "TOTAL PYT", "PYT IN") anywhere below the header marks
+      // this as a per-barrister summary sheet rather than a raw data dump.
+      for (var i2 = headerIdx + 1; i2 < raw.length; i2++) {
+        var r2 = raw[i2]; if (!r2) continue;
+        if (r2.some(function(c){ return typeof c === 'string' && totalsRowPattern.test(c.trim()); })) { hasTotals = true; break; }
+      }
+      idSet = Object.keys(ids);
+    }
+    return { name: sn, idSet: idSet, hasTotals: hasTotals };
+  }
+
+  var infos = sheetNames.map(sheetInfo);
+  var dropped = {};
+
+  for (var a = 0; a < infos.length; a++) {
+    for (var b = a + 1; b < infos.length; b++) {
+      var A = infos[a], B = infos[b];
+      if (dropped[A.name] || dropped[B.name]) continue;
+      if (A.idSet.length < 2 || B.idSet.length < 2) continue;
+      var smaller = A.idSet.length <= B.idSet.length ? A : B;
+      var larger  = A.idSet.length <= B.idSet.length ? B : A;
+      var largerLookup = {}; larger.idSet.forEach(function(v){ largerLookup[v] = true; });
+      var overlap = smaller.idSet.filter(function(v){ return largerLookup[v]; }).length;
+      var containment = overlap / smaller.idSet.length;
+      if (containment < 0.9) continue;
+      // Same underlying case data — keep whichever sheet carries the report's own
+      // reconciliation totals row (e.g. "TOTAL PYT"); if that's a tie, keep the
+      // sheet with fewer rows (the more specific/summary sheet) and drop the other.
+      var loser;
+      if (A.hasTotals && !B.hasTotals) loser = B;
+      else if (B.hasTotals && !A.hasTotals) loser = A;
+      else loser = smaller === A ? A : B;
+      dropped[loser.name] = true;
+    }
+  }
+
+  var keep = sheetNames.filter(function(n){ return !dropped[n]; });
+  return { keep: keep, dropped: Object.keys(dropped) };
+}
+
 // ── Controls ───────────────────────────────────────────────────────────────
 function setAccountCode(code) {
   accountCode = code;
@@ -625,6 +693,7 @@ function parseLexMulti(workbooks, files) {
   var lexVatColSum = 0;
   var allPsSheetNames = [];
   var allBarristers = [], allPeriods = [];
+  var allDuplicateSheets = [];
 
   workbooks.forEach(function(wb, wbIdx) {
     var psSheets = wb.SheetNames.filter(function(n) {
@@ -632,6 +701,12 @@ function parseLexMulti(workbooks, files) {
       var rows = XLSX.utils.sheet_to_json(wb.Sheets[n], { header: 1, defval: null });
       return rows.some(function(r) { return r && r.some(function(c) { return typeof c === 'string' && c.toUpperCase().indexOf('CASE ID') !== -1; }); });
     });
+
+    var dedupe = dedupeSheetsByIdColumn(wb, psSheets, 'CASE ID');
+    if (dedupe.dropped.length > 0) {
+      psSheets = dedupe.keep;
+      allDuplicateSheets = allDuplicateSheets.concat(dedupe.dropped);
+    }
 
     psSheets.forEach(function(n){ allPsSheetNames.push(n); });
 
@@ -788,6 +863,7 @@ function parseLexMulti(workbooks, files) {
   var mergedRows      = parsedRows.filter(function(r){ return r.isMerged; });
   var vatWarn = document.getElementById('vat-warning');
   var warnParts = [];
+  if (allDuplicateSheets.length > 0) warnParts.push('\u2139 ' + allDuplicateSheets.length + ' duplicate sheet' + (allDuplicateSheets.length > 1 ? 's were' : ' was') + ' excluded (same case data as another sheet in the file): ' + allDuplicateSheets.join(', ') + '.');
   if (mergedRows.length > 0)      warnParts.push('\u2139 ' + mergedRows.length + ' row' + (mergedRows.length > 1 ? 's have' : ' has') + ' been merged from split net/VAT pairs. See amber rows.');
   if (vatOverrideRows.length > 0) warnParts.push('⚠ ' + vatOverrideRows.length + ' row' + (vatOverrideRows.length > 1 ? 's have' : ' has') + ' VAT% = 20 but £0 VAT recorded — treated as Zero Rated Income.');
   if (noVatPctRows.length > 0)    warnParts.push('⚠ ' + noVatPctRows.length + ' row' + (noVatPctRows.length > 1 ? 's have' : ' has') + ' an empty VAT% — split into a 20% line (VAT amount × 6) and a Zero Rated remainder. See blue highlighted rows.');
@@ -1299,6 +1375,10 @@ function parseBarBooks(wb) {
   });
   if (!bbSheets.length) { showErr('Could not find a BarBooks sheet (no Matter ID column).'); return; }
 
+  var bbDedupe = dedupeSheetsByIdColumn(wb, bbSheets, 'MATTER ID');
+  var bbDuplicateSheets = bbDedupe.dropped;
+  if (bbDuplicateSheets.length > 0) bbSheets = bbDedupe.keep;
+
   parsedRows = [];
   var bbTotalInc=null, bbVat=null;
   if (wb.Sheets['Totals']) {
@@ -1354,7 +1434,10 @@ function parseBarBooks(wb) {
   document.getElementById('info-grid').style.display='grid';
   var overrideRows=parsedRows.filter(function(r){return r.vatOverride;});
   var vatWarn=document.getElementById('vat-warning');
-  if(overrideRows.length>0){vatWarn.textContent='\u26a0 '+overrideRows.length+' row'+(overrideRows.length>1?'s have':' has')+' VAT% = 20 but \u00a30 VAT recorded \u2014 treated as Zero Rated Income. See rows highlighted in amber.';vatWarn.style.display='block';}else{vatWarn.style.display='none';}
+  var bbWarnParts=[];
+  if(bbDuplicateSheets.length>0) bbWarnParts.push('\u2139 '+bbDuplicateSheets.length+' duplicate sheet'+(bbDuplicateSheets.length>1?'s were':' was')+' excluded (same matter data as another sheet in the file): '+bbDuplicateSheets.join(', ')+'.');
+  if(overrideRows.length>0) bbWarnParts.push('\u26a0 '+overrideRows.length+' row'+(overrideRows.length>1?'s have':' has')+' VAT% = 20 but \u00a30 VAT recorded \u2014 treated as Zero Rated Income. See rows highlighted in amber.');
+  if(bbWarnParts.length>0){vatWarn.innerHTML=bbWarnParts.join('<br>');vatWarn.style.display='block';}else{vatWarn.style.display='none';}
   var ourVat=round2(parsedRows.reduce(function(s,r){return r.taxType==='20% (VAT on Income)'?s+round2(r.amount/6):s;},0));
   document.getElementById('vat-ours').textContent=fmt(ourVat); document.getElementById('vat-src').textContent=bbVat!==null?fmt(bbVat):'n/a';
   var vatBadge=document.getElementById('vat-badge');
