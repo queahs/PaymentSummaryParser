@@ -64,7 +64,14 @@
   .ctrl-hint { font-size: 0.68rem; color: var(--muted2); }
   .chambers-select { background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; color: var(--text); font-family: 'IBM Plex Mono',monospace; font-size: 0.8rem; padding: 5px 10px; cursor: pointer; outline: none; transition: border-color 0.15s; }
   .chambers-select:focus, .chambers-select:hover { border-color: var(--accent); }
-  .chambers-custom { display: none; background: var(--bg3); border: 1px solid var(--accent); border-radius: 6px; color: var(--text); font-family: 'IBM Plex Mono',monospace; font-size: 0.8rem; padding: 5px 10px; outline: none; min-width: 220px; }
+  .chambers-combo { position: relative; display: inline-block; }
+  .chambers-input { cursor: text; min-width: 280px; }
+  .chambers-list { display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; min-width: 100%; max-height: 280px; overflow-y: auto; background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.35); padding: 4px 0; }
+  .chambers-list.open { display: block; }
+  .chambers-opt { padding: 6px 12px; font-family: 'IBM Plex Mono',monospace; font-size: 0.8rem; color: var(--text); cursor: pointer; white-space: nowrap; }
+  .chambers-opt.active { background: var(--accent); color: #000; }
+  .chambers-opt.manual { border-top: 1px solid var(--border2); font-style: italic; }
+  .chambers-opt.empty { color: var(--muted, #888); cursor: default; }
 
   .drop-zone { border: 1.5px dashed var(--border2); border-radius: 10px; padding: 2.5rem 2rem; text-align: center; cursor: pointer; background: var(--bg2); transition: border-color 0.2s, background 0.2s; margin-bottom: 1.25rem; user-select: none; }
   .drop-zone:hover, .drop-zone.dragging { border-color: var(--accent); background: rgba(148,163,184,0.05); }
@@ -195,66 +202,12 @@
 
   <div class="control-row">
     <span class="ctrl-label">Payee</span>
-    <select class="chambers-select" id="chambers-select" onchange="setChambers(this.value)">
-      <option value="__other__">Other (enter manually)...</option>
-      <option value="Chambers" selected>Chambers</option>
-      <option value="11KBW">11KBW</option>
-      <option value="1 Hare Court">1 Hare Court</option>
-      <option value="1GC|Family Law">1GC|Family Law</option>
-      <option value="2 Bedford Row">2 Bedford Row</option>
-      <option value="2 Hare Court">2 Hare Court</option>
-      <option value="23ES">23ES</option>
-      <option value="25 Bedford Row">25 Bedford Row</option>
-      <option value="36Group">36Group</option>
-      <option value="3 Verulam Buildings (3VB)">3 Verulam Buildings (3VB)</option>
-      <option value="39 Essex Chambers">39 Essex Chambers</option>
-      <option value="4 New Square Chambers">4 New Square Chambers</option>
-      <option value="4 Pump Court">4 Pump Court</option>
-      <option value="4 Stone Buildings">4 Stone Buildings</option>
-      <option value="4PB">4PB</option>
-      <option value="5 Essex Chambers">5 Essex Chambers</option>
-      <option value="5 King's Bench Walk">5 King's Bench Walk</option>
-      <option value="6KBW College Hill">6KBW College Hill</option>
-      <option value="7 King's Bench Walk (7KBW)">7 King's Bench Walk (7KBW)</option>
-      <option value="Blackstone Chambers">Blackstone Chambers</option>
-      <option value="Brick Court Chambers">Brick Court Chambers</option>
-      <option value="Cobden House Chambers">Cobden House Chambers</option>
-      <option value="Dere Street Barristers">Dere Street Barristers</option>
-      <option value="Doughty Street Chambers">Doughty Street Chambers</option>
-      <option value="Essex Court Chambers">Essex Court Chambers</option>
-      <option value="Exchange Chambers">Exchange Chambers</option>
-      <option value="Falcon Chambers">Falcon Chambers</option>
-      <option value="Fountain Court Chambers">Fountain Court Chambers</option>
-      <option value="Garden Court Chambers">Garden Court Chambers</option>
-      <option value="Garden Court North Chambers">Garden Court North Chambers</option>
-      <option value="Gatehouse Chambers">Gatehouse Chambers</option>
-      <option value="Gray's Inn Tax Chambers">Gray's Inn Tax Chambers</option>
-      <option value="Henderson Chambers">Henderson Chambers</option>
-      <option value="Keating Chambers">Keating Chambers</option>
-      <option value="Kings Chambers">Kings Chambers</option>
-      <option value="Lamb Chambers">Lamb Chambers</option>
-      <option value="Landmark Chambers">Landmark Chambers</option>
-      <option value="Littleton Chambers">Littleton Chambers</option>
-      <option value="Maitland Chambers">Maitland Chambers</option>
-      <option value="Matrix Chambers">Matrix Chambers</option>
-      <option value="Monckton Chambers">Monckton Chambers</option>
-      <option value="Mountford Chambers">Mountford Chambers</option>
-      <option value="No5 Barristers' Chambers">No5 Barristers' Chambers</option>
-      <option value="One Essex Court">One Essex Court</option>
-      <option value="Outer Temple Chambers">Outer Temple Chambers</option>
-      <option value="Park Square Barristers">Park Square Barristers</option>
-      <option value="Pump Court Tax Chambers">Pump Court Tax Chambers</option>
-      <option value="Red Lion Chambers">Red Lion Chambers</option>
-      <option value="Serle Court">Serle Court</option>
-      <option value="South Square">South Square</option>
-      <option value="St John's Chambers">St John's Chambers</option>
-      <option value="St Johns Buildings">St Johns Buildings</option>
-      <option value="St Philips Chambers">St Philips Chambers</option>
-      <option value="Twenty Essex">Twenty Essex</option>
-      <option value="Wilberforce Chambers">Wilberforce Chambers</option>
-    </select>
-    <input type="text" id="chambers-custom" class="chambers-custom" placeholder="Enter chambers name">
-    <span class="ctrl-hint" id="chambers-hint">Select the chambers to apply to all entries</span>
+    <div class="chambers-combo" id="chambers-combo">
+      <input type="text" id="chambers-input" class="chambers-select chambers-input" value="Chambers" autocomplete="off" spellcheck="false"
+             placeholder="Type to search chambers..." role="combobox" aria-expanded="false" aria-controls="chambers-list" aria-autocomplete="list">
+      <div class="chambers-list" id="chambers-list" role="listbox"></div>
+    </div>
+    <span class="ctrl-hint" id="chambers-hint">Type to search &mdash; or type a name that isn't listed</span>
   </div>
 
   <!-- multiple attribute allows selecting several xlsx files at once -->
@@ -449,27 +402,130 @@ function setAccountCode(code) {
   document.querySelectorAll('.ac-cell').forEach(function(c){ c.textContent = code; });
 }
 
+// ── Payee: type to search the chambers list, or type a name that isn't on it ──
+var CHAMBERS = [
+  'Chambers',
+  '11KBW',
+  '1 Hare Court',
+  '1GC|Family Law',
+  '2 Bedford Row',
+  '2 Hare Court',
+  '23ES',
+  '25 Bedford Row',
+  '36Group',
+  '3 Verulam Buildings (3VB)',
+  '39 Essex Chambers',
+  '4 New Square Chambers',
+  '4 Pump Court',
+  '4 Stone Buildings',
+  '4PB',
+  '5 Essex Chambers',
+  '5 King\'s Bench Walk',
+  '6KBW College Hill',
+  '7 King\'s Bench Walk (7KBW)',
+  'Blackstone Chambers',
+  'Brick Court Chambers',
+  'Cobden House Chambers',
+  'Dere Street Barristers',
+  'Doughty Street Chambers',
+  'Essex Court Chambers',
+  'Exchange Chambers',
+  'Falcon Chambers',
+  'Fountain Court Chambers',
+  'Garden Court Chambers',
+  'Garden Court North Chambers',
+  'Gatehouse Chambers',
+  'Gray\'s Inn Tax Chambers',
+  'Henderson Chambers',
+  'Keating Chambers',
+  'Kings Chambers',
+  'Lamb Chambers',
+  'Landmark Chambers',
+  'Littleton Chambers',
+  'Maitland Chambers',
+  'Matrix Chambers',
+  'Monckton Chambers',
+  'Mountford Chambers',
+  'No5 Barristers\' Chambers',
+  'One Essex Court',
+  'Outer Temple Chambers',
+  'Park Square Barristers',
+  'Pump Court Tax Chambers',
+  'Red Lion Chambers',
+  'Serle Court',
+  'South Square',
+  'St John\'s Chambers',
+  'St Johns Buildings',
+  'St Philips Chambers',
+  'Twenty Essex',
+  'Wilberforce Chambers'
+];
+
 function setChambers(val) {
-  var ci   = document.getElementById('chambers-custom');
-  var hint = document.getElementById('chambers-hint');
-  if (val === '__other__') {
-    ci.style.display = 'inline-block'; ci.focus();
-    hint.textContent = 'Type the chambers name above';
-    selectedChambers = ci.value || '';
-  } else {
-    ci.style.display = 'none';
-    hint.textContent = 'Select the chambers to apply to all entries';
-    selectedChambers = val;
-  }
+  selectedChambers = (val || '').trim() || 'Chambers';
+  document.getElementById('chambers-input').value = selectedChambers;
   document.querySelectorAll('.payee-cell').forEach(function(c){ c.textContent = selectedChambers; });
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-  document.getElementById('chambers-custom').addEventListener('input', function() {
-    selectedChambers = this.value;
-    document.querySelectorAll('.payee-cell').forEach(function(c){ c.textContent = selectedChambers; });
+(function() {
+  var input = document.getElementById('chambers-input');
+  var list  = document.getElementById('chambers-list');
+  var items = [], active = -1;
+
+  function esc(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+  function render(showAll) {
+    var q = showAll ? '' : input.value.trim().toLowerCase();
+    var matches = CHAMBERS.filter(function(n){ return !q || n.toLowerCase().indexOf(q) !== -1; });
+    // Names starting with what was typed first.
+    matches.sort(function(a, b) { return (a.toLowerCase().indexOf(q) === 0 ? 0 : 1) - (b.toLowerCase().indexOf(q) === 0 ? 0 : 1); });
+    var typed = input.value.trim();
+    var exact = CHAMBERS.some(function(n){ return n.toLowerCase() === typed.toLowerCase(); });
+    items = matches.map(function(n){ return { value: n, label: esc(n) }; });
+    if (typed && !exact && !showAll) items.push({ value: typed, label: '+ Use &ldquo;' + esc(typed) + '&rdquo; (not in the list)', manual: true });
+    active = items.length ? 0 : -1;
+    list.innerHTML = items.length
+      ? items.map(function(it, i){ return '<div class="chambers-opt' + (it.manual ? ' manual' : '') + (i === active ? ' active' : '') + '" role="option" data-i="' + i + '">' + it.label + '</div>'; }).join('')
+      : '<div class="chambers-opt empty">Type a chambers name</div>';
+    list.classList.add('open');
+    input.setAttribute('aria-expanded', 'true');
+  }
+
+  function close() { list.classList.remove('open'); input.setAttribute('aria-expanded', 'false'); }
+
+  function highlight(i) {
+    var opts = list.querySelectorAll('.chambers-opt[data-i]');
+    if (!opts.length) return;
+    active = (i + opts.length) % opts.length;
+    opts.forEach(function(o, j){ o.classList.toggle('active', j === active); });
+    opts[active].scrollIntoView({ block: 'nearest' });
+  }
+
+  function choose(i) {
+    var it = items[i];
+    setChambers(it ? it.value : input.value);
+    close();
+    input.blur();
+  }
+
+  input.addEventListener('focus', function(){ input.select(); render(true); });
+  input.addEventListener('input', function(){ render(false); });
+  input.addEventListener('keydown', function(e) {
+    if (e.key === 'ArrowDown') { e.preventDefault(); if (!list.classList.contains('open')) render(false); else highlight(active + 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); highlight(active - 1); }
+    else if (e.key === 'Enter') { e.preventDefault(); choose(active); }
+    else if (e.key === 'Escape') { input.value = selectedChambers; close(); input.blur(); }
   });
-});
+  // mousedown (not click) so the choice lands before the input loses focus.
+  list.addEventListener('mousedown', function(e) {
+    var opt = e.target.closest('.chambers-opt[data-i]');
+    if (!opt) return;
+    e.preventDefault();
+    choose(Number(opt.dataset.i));
+  });
+  // Clicking away keeps whatever was typed (an empty box goes back to "Chambers").
+  input.addEventListener('blur', function(){ setTimeout(function(){ if (list.classList.contains('open')) { setChambers(input.value); close(); } }, 0); });
+})();
 
 // ── Apply format-specific theming ──────────────────────────────────────────
 function applyTheme(format) {
