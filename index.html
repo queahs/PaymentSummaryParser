@@ -967,10 +967,11 @@ function parseMeridianMulti(workbooks, files) {
   parsedRows = [];
   var allMeridianTotals = 0, hasAnyTotal = false;
   var allMeridianVat = 0, hasAnyVat = false;
+  var allRowsVat = 0, footerMismatches = [];
   var allTargetSheets = [], allBarristers = [], allPeriods = [], allCodes = [];
   var overrideCount = 0;
 
-  workbooks.forEach(function(wb) {
+  workbooks.forEach(function(wb, wbIdx) {
     var targetSheet = null;
     for (var si = 0; si < wb.SheetNames.length; si++) {
       var sn = wb.SheetNames[si];
@@ -1020,7 +1021,7 @@ function parseMeridianMulti(workbooks, files) {
     if (feesOcc.length >= 2) { COL_FEES = feesOcc[0]; COL_VATFEES = feesOcc[1]; }
     if (expOcc.length  >= 2) { COL_EXP  = expOcc[0];  COL_VATEXP  = expOcc[1]; }
 
-    var wbMeridianTotal = null, wbVatFees = null, wbVatExp = null;
+    var wbMeridianTotal = null, wbVatFees = null, wbVatExp = null, wbRowsVat = 0;
 
     for (var i = headerIdx + 1; i < raw.length; i++) {
       var row = raw[i]; if (!row) continue;
@@ -1042,6 +1043,9 @@ function parseMeridianMulti(workbooks, files) {
       var dateVal   = COL_DATE  !== -1 ? row[COL_DATE] : null;
       var dateStr   = dateVal ? String(dateVal).trim() : '';
       if (typeof dateVal === 'number') { var pd = XLSX.SSF.parse_date_code(dateVal); dateStr = String(pd.d).padStart(2,'0') + '/' + String(pd.m).padStart(2,'0') + '/' + pd.y; }
+      // Some Meridian exports write dates as text "25.08.2026"; Xero wants 25/08/2026.
+      var dm = dateStr.match(/^(\d{1,2})[.\-](\d{1,2})[.\-](\d{4})$/);
+      if (dm) dateStr = dm[1].padStart(2,'0') + '/' + dm[2].padStart(2,'0') + '/' + dm[3];
 
       var fees     = COL_FEES    !== -1 && typeof row[COL_FEES]    === 'number' ? row[COL_FEES]    : 0;
       var exps     = COL_EXP     !== -1 && typeof row[COL_EXP]     === 'number' ? row[COL_EXP]     : 0;
@@ -1050,6 +1054,7 @@ function parseMeridianMulti(workbooks, files) {
       var vatExp   = COL_VATEXP  !== -1 && typeof row[COL_VATEXP]  === 'number' ? row[COL_VATEXP]  : 0;
       var totalPaid = COL_TOTAL  !== -1 && typeof row[COL_TOTAL]   === 'number' ? row[COL_TOTAL]   : 0;
       if (totalPaid === 0) continue;
+      wbRowsVat += vatFees + vatExp;
 
       var actualVat = Math.abs(vatFees) + Math.abs(vatExp);
       var taxType   = (vatPct >= 15 && actualVat > 0) ? '20% (VAT on Income)' : 'Zero Rated Income';
@@ -1075,19 +1080,39 @@ function parseMeridianMulti(workbooks, files) {
     }
 
     if (wbMeridianTotal !== null) { allMeridianTotals += wbMeridianTotal; hasAnyTotal = true; }
-    if (wbVatFees !== null || wbVatExp !== null) { allMeridianVat += (wbVatFees || 0) + (wbVatExp || 0); hasAnyVat = true; }
+    if (wbVatFees !== null || wbVatExp !== null) {
+      var wbFooterVat = (wbVatFees || 0) + (wbVatExp || 0);
+      allMeridianVat += wbFooterVat; hasAnyVat = true;
+      // The Barrister Total row's VAT has been seen not to agree with the
+      // report's own VAT columns (e.g. £1,210.72 against rows adding up to
+      // £1,099.72, while its Total Paid still ties to the rows).
+      if (Math.abs(round2(wbFooterVat) - round2(wbRowsVat)) >= 0.02) {
+        var fname = files && files[wbIdx] ? files[wbIdx].name : targetSheet;
+        footerMismatches.push(fname + ': the Barrister Total row says ' + fmt(round2(wbFooterVat)) + ' VAT, but the report\u2019s own VAT columns add up to ' + fmt(round2(wbRowsVat)));
+      }
+    }
+    allRowsVat += wbRowsVat;
   });
 
   if (parsedRows.length === 0) { showErr('No payment rows found. Check that the files are Meridian Payment Summaries.'); return; }
 
   var vatWarn = document.getElementById('vat-warning');
+  var warnLines = [];
   if (overrideCount > 0) {
-    vatWarn.textContent = '⚠ ' + overrideCount + ' row' + (overrideCount > 1 ? 's have' : ' has') + ' VAT% = 20 but £0 VAT recorded — treated as Zero Rated Income. See rows highlighted in amber.';
-    vatWarn.style.display = 'block';
-  } else { vatWarn.style.display = 'none'; }
+    warnLines.push('⚠ ' + overrideCount + ' row' + (overrideCount > 1 ? 's have' : ' has') + ' VAT% = 20 but £0 VAT recorded — treated as Zero Rated Income. See rows highlighted in amber.');
+  }
+  // Checked against the rows' own VAT columns when the Barrister Total row
+  // disagrees with them, or is missing (e.g. a hand-made extract of a report).
+  var useRowsVat = footerMismatches.length > 0 || !hasAnyVat;
+  if (footerMismatches.length) {
+    warnLines.push('⚠ ' + footerMismatches.join(' · ') + '. The report\u2019s total looks wrong (its Total Paid agrees with the rows), so VAT is checked against the rows instead.');
+  }
+  if (warnLines.length) { vatWarn.textContent = warnLines.join(' '); vatWarn.style.display = 'block'; }
+  else { vatWarn.style.display = 'none'; }
 
   var ourVat = round2(parsedRows.reduce(function(s,r){ return r.taxType === '20% (VAT on Income)' ? s + round2(r.amount / 6) : s; }, 0));
-  var meridianVat = hasAnyVat ? round2(allMeridianVat) : null;
+  var meridianVat = useRowsVat ? round2(allRowsVat) : round2(allMeridianVat);
+  document.getElementById('vat-src-label').textContent = useRowsVat ? 'Meridian VAT (sum of the report\u2019s VAT columns)' : 'Meridian VAT (from Barrister Total row)';
   document.getElementById('vat-ours').textContent = fmt(ourVat);
   document.getElementById('vat-src').textContent  = meridianVat !== null ? fmt(meridianVat) : 'n/a';
   var vatBadge = document.getElementById('vat-badge');
