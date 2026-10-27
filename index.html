@@ -1221,7 +1221,7 @@ function buildFilename() {
 
 function downloadCSV() {
   if (!parsedRows.length) return;
-  var blob = new Blob([buildCSV()], { type: 'text/csv' });
+  var blob = new Blob(['\uFEFF' + buildCSV()], { type: 'text/csv;charset=utf-8' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = buildFilename(); a.click(); URL.revokeObjectURL(a.href);
 }
 
@@ -1248,7 +1248,7 @@ function buildSalesCSVFromRows(rows) {
 function downloadSalesCSV() {
   if (!parsedRows.length) return;
   var csv = buildSalesCSVFromRows(parsedRows); if (!csv) return;
-  var blob = new Blob([csv], { type: 'text/csv' });
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = buildFilename().replace('_PS_','_SI_'); a.click(); URL.revokeObjectURL(a.href);
 }
 
@@ -1256,7 +1256,7 @@ function downloadSalesMayCSV() {
   var rows = getMayRows();
   if (!rows.length) { alert('No rows found for July 2026.'); return; }
   var csv = buildSalesCSVFromRows(rows);
-  var blob = new Blob([csv], { type: 'text/csv' });
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = buildFilename().replace(/_PS_.+$/, '') + '_SI_Jul2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
@@ -1265,7 +1265,7 @@ function downloadSalesJunCSV() {
   var rows = getJunRows();
   if (!rows.length) { alert('No rows found for August 2026.'); return; }
   var csv = buildSalesCSVFromRows(rows);
-  var blob = new Blob([csv], { type: 'text/csv' });
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = buildFilename().replace(/_PS_.+$/, '') + '_SI_Aug2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
@@ -1274,7 +1274,7 @@ function downloadSalesMayJunCSV() {
   var rows = getMayJunRows();
   if (!rows.length) { alert('No rows found for July–August 2026.'); return; }
   var csv = buildSalesCSVFromRows(rows);
-  var blob = new Blob([csv], { type: 'text/csv' });
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = buildFilename().replace(/_PS_.+$/, '') + '_SI_JulAug2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
@@ -1310,7 +1310,7 @@ function buildMonthCSV(rows) {
 function downloadMayCSV() {
   var csv = buildMonthCSV(getMayRows());
   if (!csv) { alert('No rows found for July 2026.'); return; }
-  var blob = new Blob([csv], { type: 'text/csv' });
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = buildFilename().replace(/_PS_.+$/, '') + '_PS_Jul2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
@@ -1318,7 +1318,7 @@ function downloadMayCSV() {
 function downloadJunCSV() {
   var csv = buildMonthCSV(getJunRows());
   if (!csv) { alert('No rows found for August 2026.'); return; }
-  var blob = new Blob([csv], { type: 'text/csv' });
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = buildFilename().replace(/_PS_.+$/, '') + '_PS_Aug2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
@@ -1326,7 +1326,7 @@ function downloadJunCSV() {
 function downloadMayJunCSV() {
   var csv = buildMonthCSV(getMayJunRows());
   if (!csv) { alert('No rows found for July–August 2026.'); return; }
-  var blob = new Blob([csv], { type: 'text/csv' });
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8' });
   var a = document.createElement('a'); a.href = URL.createObjectURL(blob);
   a.download = buildFilename().replace(/_PS_.+$/, '') + '_PS_JulAug2026.csv'; a.click(); URL.revokeObjectURL(a.href);
 }
