@@ -30,8 +30,7 @@
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
   .container { max-width: 1280px; margin: 0 auto; }
 
-  header { margin-bottom: 2rem; }
-  .tag { font-size: 0.65rem; color: var(--accent); letter-spacing: 0.18em; text-transform: uppercase; margin-bottom: 0.3rem; transition: color 0.3s; }
+  header { margin: 1.25rem 0 2rem; }
   h1 { font-family: 'IBM Plex Sans',sans-serif; font-size: 1.6rem; font-weight: 600; color: #fff; margin-bottom: 0.3rem; }
   .subtitle { font-size: 0.75rem; color: var(--muted); }
 
@@ -165,7 +164,6 @@
 <body>
 <div class="container">
   <header>
-    <div class="tag" id="hdr-tag">LEX &amp; Meridian</div>
     <h1>Payment Summary Parser</h1>
     <p class="subtitle" id="hdr-sub">Supports LEX &amp; Meridian (up to 3 .xlsx files each), BarBooks, InvoicesPaid (.xlsx/.xls), Lamb Chambers Revenue Breakdown (.xlsx/.csv), BarStat VAT Submission (.xlsx, Income sheet), MTD CB, MTD SL (.csv, up to 3 files) and BarStat (.csv) &mdash; format detected automatically</p>
   </header>
@@ -539,8 +537,6 @@ function applyTheme(format) {
   badge.className = 'format-badge ' + format;
   document.getElementById('format-badge-text').textContent =
     isLex ? 'LEX detected' : (isMtd ? 'MTD CB detected' : (isBar ? 'BarBooks detected' : (isInv ? 'InvoicesPaid detected' : (isBst ? 'BarStat detected' : (isMtdSl ? 'MTD SL detected' : (isLamb ? 'Lamb Chambers detected' : 'Meridian detected'))))));
-  document.getElementById('hdr-tag').textContent =
-    isLex ? 'LEX' : (isMtd ? 'MTD CB' : (isBar ? 'BarBooks' : (isInv ? 'InvoicesPaid' : (isBst ? 'BarStat' : (isMtdSl ? 'MTD SL' : (isLamb ? 'Lamb Chambers' : 'Meridian'))))));
 
   var copyBtn = document.getElementById('copy-btn');
   if (isLex)        { copyBtn.style.background='#1a3a6e'; copyBtn.style.borderColor='#2a5298'; copyBtn.style.color='#7ab3ff'; }
@@ -1530,7 +1526,6 @@ function parseBarStatVat(wb) {
 
   // Relabel the BarStat theme for this export.
   document.getElementById('format-badge-text').textContent = 'BarStat VAT Submission detected';
-  document.getElementById('hdr-tag').textContent = 'BarStat VAT';
   document.getElementById('info-barrister-label').textContent = 'Barrister';
   document.getElementById('vat-src-label').textContent = 'BarStat VAT (from Income totals)';
 
