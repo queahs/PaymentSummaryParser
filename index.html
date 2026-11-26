@@ -57,6 +57,15 @@
   --pf-radius-lg:10px;
 }
 
+/* Tool page title: one style on every tool (26px Montserrat Regular, brand
+   tracking, Dark Grey). The doubled class outranks each tool's own h1 rules. */
+.pf-title.pf-title{
+  font-family:var(--pf-font); font-size:26px; font-weight:var(--pf-weight-regular);
+  letter-spacing:var(--pf-headline-tracking); line-height:1.2; color:var(--pf-dark-grey);
+  text-transform:none;
+}
+.pf-title.pf-title span, .pf-title.pf-title strong, .pf-title.pf-title b{ font-weight:inherit; }
+
 /* Figures line up in columns without needing a monospace font. */
 body{ font-variant-numeric:tabular-nums; }
 </style>
@@ -199,7 +208,7 @@ body{ font-variant-numeric:tabular-nums; }
 <body>
 <div class="container">
   <header>
-    <h1>Payment Summary Parser</h1>
+    <h1 class="pf-title">Payment Summary Parser</h1>
     <p class="subtitle" id="hdr-sub">Supports LEX &amp; Meridian (up to 3 .xlsx files each), BarBooks, InvoicesPaid (.xlsx/.xls), Lamb Chambers Revenue Breakdown (.xlsx/.csv), BarStat VAT Submission (.xlsx, Income sheet), MTD CB, MTD SL (.csv, up to 3 files) and BarStat (.csv) &mdash; format detected automatically</p>
   </header>
 
