@@ -55,6 +55,35 @@
 
   --pf-radius:6px;
   --pf-radius-lg:10px;
+
+  /* ── Layout standards (suite convention) ─────────────────────────────── */
+  --pf-page-max:1400px;      /* page column: centred, this wide at most */
+  --pf-gutter:24px;          /* side margin of the page column */
+  --pf-btn-h:36px;           /* regular button height */
+  --pf-btn-h-sm:28px;        /* small button height (toolbars, table rows) */
+  --pf-btn-radius:6px;       /* every rectangular button */
+  --pf-btn-font:13px;
+  --pf-btn-font-sm:12px;
+  --pf-card-radius:8px;      /* every card / panel */
+}
+
+/* Page column: the same width and left edge on every tool. */
+.pf-page.pf-page{
+  box-sizing:border-box; width:100%; max-width:var(--pf-page-max);
+  margin-left:auto; margin-right:auto;
+  padding-left:var(--pf-gutter); padding-right:var(--pf-gutter);
+}
+
+/* Page heading block: the title row (title, plus any controls on the right)
+   sits on a 2px Dark Grey line, with one line of description under it. */
+.pf-head.pf-head{
+  display:flex; align-items:center; justify-content:space-between; gap:12px 16px; flex-wrap:wrap;
+  border-bottom:2px solid var(--pf-dark-grey); padding:0 0 12px; margin:28px 0 10px;
+}
+.pf-head.pf-head .pf-title{ margin:0; }
+.pf-desc.pf-desc{
+  font-family:var(--pf-font); font-size:13px; line-height:1.5; font-weight:var(--pf-weight-regular);
+  color:var(--pf-text-muted); margin:0 0 24px; max-width:900px;
 }
 
 /* Tool page title: one style on every tool (26px Montserrat Regular, brand
@@ -65,6 +94,30 @@
   text-transform:none;
 }
 .pf-title.pf-title span, .pf-title.pf-title strong, .pf-title.pf-title b{ font-weight:inherit; }
+
+/* Top banner on every tool: Dark Grey bar, logo on a white tile, "All tools"
+   link, and "Signed in as" on the right. Each page keeps only its own margins,
+   which stretch the bar to the window edges. */
+.pf-nav.pf-nav{
+  display:flex; align-items:center; justify-content:space-between; gap:16px;
+  box-sizing:border-box; min-height:44px; padding:8px 20px; border:0; border-radius:0;
+  background:var(--pf-dark-grey); color:#fff; font-family:var(--pf-font); font-size:12px; line-height:1.3;
+}
+.pf-nav.pf-nav .pf-nav-side{ display:flex; align-items:center; gap:12px; }
+.pf-nav.pf-nav .pf-nav-logo{
+  height:28px; width:auto; display:block; box-sizing:content-box;
+  background:#fff; border-radius:3px; padding:3px 8px;
+}
+.pf-nav.pf-nav a{ color:var(--pf-on-dark-muted); text-decoration:none; font-weight:600; }
+.pf-nav.pf-nav a:hover{ color:#fff; }
+/* "Instructions" (or any other banner button): red, on the right, before "Signed in as". */
+.pf-nav.pf-nav .pf-nav-btn{
+  display:inline-flex; align-items:center; gap:6px; min-height:28px; box-sizing:border-box;
+  padding:4px 12px; border:0; border-radius:var(--pf-btn-radius); cursor:pointer;
+  background:var(--pf-red); color:#fff; font-family:var(--pf-font); font-size:12px; font-weight:700;
+  text-decoration:none; line-height:1;
+}
+.pf-nav.pf-nav .pf-nav-btn:hover{ background:var(--pf-red-hover); color:#fff; }
 
 /* Figures line up in columns without needing a monospace font. */
 body{ font-variant-numeric:tabular-nums; }
@@ -90,15 +143,10 @@ body{ font-variant-numeric:tabular-nums; }
     --lamb-accent: var(--pf-red-text);
     --slate: var(--pf-text-muted); --amber: var(--pf-warning);
   }
-  body { background: var(--bg); color: var(--text); font-family: var(--pf-font); min-height: 100vh; padding: 2.5rem 2rem; }
+  body { background: var(--bg); color: var(--text); font-family: var(--pf-font); min-height: 100vh; padding: 0 0 2.5rem; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg3); }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
-  .container { max-width: 1280px; margin: 0 auto; }
-
-  header { margin: 1.25rem 0 2rem; }
-  h1 { font-family: var(--pf-font); font-size: 1.6rem; font-weight: var(--pf-weight-regular); letter-spacing: var(--pf-headline-tracking); color: var(--text); margin-bottom: 0.3rem; }
-  .subtitle { font-size: 0.75rem; color: var(--muted); }
 
   .format-badge-wrap { margin-bottom: 1.25rem; min-height: 2rem; display: flex; align-items: center; }
   .format-badge { display: none; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
@@ -106,7 +154,7 @@ body{ font-variant-numeric:tabular-nums; }
   .format-badge.bst, .format-badge.mtdsl, .format-badge.lamb, .format-badge.meridian { display: inline-flex; background: var(--pf-red-tint); border: 1px solid var(--pf-red); color: var(--accent-text); }
   .format-badge .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--pf-red); }
 
-  .control-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; }
+  .control-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--pf-card-radius); padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; }
   .ctrl-label { font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
   .toggle-pills { display: flex; background: var(--bg3); border-radius: 6px; padding: 3px; gap: 3px; }
   .toggle-pill { padding: 5px 18px; border-radius: 4px; font-size: 0.8rem; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--muted); font-family: var(--pf-font); transition: background 0.15s, color 0.15s; }
@@ -124,7 +172,7 @@ body{ font-variant-numeric:tabular-nums; }
   .chambers-opt.manual { border-top: 1px solid var(--border); font-style: italic; }
   .chambers-opt.empty { color: var(--muted); cursor: default; }
 
-  .drop-zone { border: 1.5px dashed var(--border2); border-radius: 10px; padding: 2.5rem 2rem; text-align: center; cursor: pointer; background: var(--bg2); transition: border-color 0.2s, background 0.2s; margin-bottom: 1.25rem; user-select: none; }
+  .drop-zone { border: 1.5px dashed var(--border2); border-radius: var(--pf-card-radius); padding: 2.5rem 2rem; text-align: center; cursor: pointer; background: var(--bg2); transition: border-color 0.2s, background 0.2s; margin-bottom: 1.25rem; user-select: none; }
   .drop-zone:hover, .drop-zone.dragging { border-color: var(--accent); background: var(--pf-red-tint); }
   .drop-icon { font-size: 2rem; margin-bottom: 0.6rem; line-height: 1; }
   .drop-label { font-size: 0.9rem; color: var(--text); font-family: var(--pf-font); }
@@ -154,7 +202,7 @@ body{ font-variant-numeric:tabular-nums; }
   .match-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 500; }
   .match-badge.ok  { background: var(--pf-success-bg); border: 1px solid var(--pf-success-border); color: var(--green); }
   .match-badge.err { background: var(--pf-error-bg);   border: 1px solid var(--pf-error-border);   color: var(--red); }
-  .copy-btn { padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 0.72rem; font-family: var(--pf-font); font-weight: 500; letter-spacing: 0.02em; transition: background 0.15s, border-color 0.15s; border: 1px solid var(--border2); background: var(--bg2); color: var(--text); }
+  .copy-btn { display: inline-flex; align-items: center; justify-content: center; min-height: var(--pf-btn-h); padding: 0 14px; border-radius: var(--pf-btn-radius); cursor: pointer; font-size: var(--pf-btn-font); font-family: var(--pf-font); font-weight: 500; letter-spacing: 0.02em; transition: background 0.15s, border-color 0.15s; border: 1px solid var(--border2); background: var(--bg2); color: var(--text); }
   .copy-btn:hover { background: var(--bg3); border-color: var(--text); }
   /* Bank exports are the main action (brand Red); Sales exports are filled
      in brand Dark Grey; Copy CSV stays a plain outlined button. */
@@ -206,11 +254,11 @@ body{ font-variant-numeric:tabular-nums; }
 </style>
 </head>
 <body>
-<div class="container">
-  <header>
+<div class="container pf-page">
+  <div class="pf-head">
     <h1 class="pf-title">Payment Summary Parser</h1>
-    <p class="subtitle" id="hdr-sub">Supports LEX &amp; Meridian (up to 3 .xlsx files each), BarBooks, InvoicesPaid (.xlsx/.xls), Lamb Chambers Revenue Breakdown (.xlsx/.csv), BarStat VAT Submission (.xlsx, Income sheet), MTD CB, MTD SL (.csv, up to 3 files) and BarStat (.csv) &mdash; format detected automatically</p>
-  </header>
+  </div>
+  <p class="pf-desc" id="hdr-sub">Supports LEX &amp; Meridian (up to 3 .xlsx files each), BarBooks, InvoicesPaid (.xlsx/.xls), Lamb Chambers Revenue Breakdown (.xlsx/.csv), BarStat VAT Submission (.xlsx, Income sheet), MTD CB, MTD SL (.csv, up to 3 files) and BarStat (.csv) &mdash; format detected automatically</p>
 
   <div class="format-badge-wrap">
     <div class="format-badge" id="format-badge">
@@ -280,7 +328,7 @@ body{ font-variant-numeric:tabular-nums; }
           <span class="match-badge" id="vat-badge" style="margin-top:2px;"></span>
         </div>
       </div>
-      <div id="vat-warning" style="display:none; margin-top:0.75rem; padding:0.5rem 0.75rem; background:var(--pf-warning-bg); border:1px solid var(--pf-warning-border); border-radius:6px; font-size:0.72rem; color:var(--pf-warning);"></div>
+      <div id="vat-warning" style="display:none; margin-top:0.75rem; padding:0.5rem 0.75rem; background:var(--pf-warning-bg); border:1px solid var(--pf-warning-border); border-radius:var(--pf-card-radius); font-size:0.72rem; color:var(--pf-warning);"></div>
     </div>
 
     <div class="summary-bar">
