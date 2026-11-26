@@ -5,81 +5,124 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Payment Summary Parser</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@300;400;500;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+/* Philip Friede & Co. brand tokens — from Brand Guidelines v1.0 (2018).
+   See docs/BRAND.md. Do not add colours to the primary palette here.
+
+   Tools link this file, then point their own :root variables at these
+   (e.g. --accent: var(--pf-red)) so layouts stay untouched. */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap');
+
+:root{
+  /* ── Primary palette (from the guidelines) ─────────────────────────── */
+  --pf-red:#ff2855;         /* RGB 255,40,85  · CMYK 0,95,55,0  · Pantone 032 C */
+  --pf-dark-grey:#3c465a;   /* RGB 60,70,90   · CMYK 75,60,40,20 */
+  --pf-light-grey:#e1e6eb;  /* RGB 225,230,235 · CMYK 15,7,6,0 */
+  --pf-white:#ffffff;
+
+  /* ── Typography (from the guidelines) ──────────────────────────────── */
+  --pf-font:'Montserrat',Arial,sans-serif;  /* Arial is the brand's system font */
+  --pf-weight-light:300;    /* body copy (print) */
+  --pf-weight-regular:400;  /* headlines; body copy on screen */
+  --pf-weight-medium:500;
+  --pf-weight-semibold:600;
+  --pf-weight-bold:700;
+  --pf-headline-tracking:0.05em;  /* "+50 tracking" */
+
+  /* ── Screen UI tokens (suite convention, not from the guidelines) ──────
+     Tints and shades of the primary palette for surfaces, borders and
+     states, plus functional status colours. None of these is a new brand
+     colour; brand Red stays the only accent. */
+  --pf-page:#f5f7f9;           /* page background: Light Grey, lightened */
+  --pf-surface:#ffffff;        /* cards, inputs */
+  --pf-surface-alt:#f0f3f5;    /* card headers, zebra rows, drop zones */
+  --pf-border:#e1e6eb;         /* = Light Grey */
+  --pf-border-strong:#c0c6ce;  /* inputs, dashed drop zones */
+  --pf-text:#3c465a;           /* = Dark Grey */
+  --pf-text-muted:#636a79;     /* 4.6:1 on page background */
+  --pf-text-faint:#8a909c;     /* placeholders, disabled — not for body text */
+  --pf-dark-grey-hover:#2c3443;/* darker Dark Grey for hover on dark fills */
+  --pf-red-hover:#e61f4a;      /* pressed/hover on red fills */
+  --pf-red-text:#d6143f;       /* Red for small text/links on white (5.2:1; brand Red is 3.7:1) */
+  --pf-red-tint:#ffeaee;       /* selected/hover backgrounds */
+  --pf-on-dark-muted:#c3c9d2;  /* secondary text on Dark Grey */
+
+  /* Status — functional, deliberately not brand Red */
+  --pf-success:#1d6447;  --pf-success-bg:#e1f1e8;  --pf-success-border:#a8d5b8;
+  --pf-warning:#7a5200;  --pf-warning-bg:#f9efd6;  --pf-warning-border:#ecc77d;
+  --pf-error:#a63d3d;    --pf-error-bg:#fbe9e6;    --pf-error-border:#e3b3b3;
+  --pf-info:#3c465a;     --pf-info-bg:#e9edf1;     --pf-info-border:#c0c6ce;
+
+  --pf-radius:6px;
+  --pf-radius-lg:10px;
+}
+
+/* Figures line up in columns without needing a monospace font. */
+body{ font-variant-numeric:tabular-nums; }
+</style>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  /* Colours and fonts come from the brand styles above (Philip Friede & Co. brand). */
   :root {
-    --bg: #0f1117; --bg2: #13161e; --bg3: #1a1d24;
-    --border: #1e2230; --border2: #2a2f3e;
-    --text: #e8e6e0; --muted: #666; --muted2: #444;
-    --accent: #94a3b8;
-    --green: #34d399; --red: #fb7185;
-    --lex-accent: #4a9eff;
-    --mer-accent: #a78bfa;
-    --mtd-accent: #2dd4bf;
-    --bar-accent: #f97316;
-    --inv-accent: #e879f9;
-    --bst-accent: #34d399;
-    --mtdsl-accent: #f59e0b;
-    --lamb-accent: #22d3ee;
-    --slate: #94a3b8; --amber: #fbbf24;
+    --bg: var(--pf-page); --bg2: var(--pf-surface); --bg3: var(--pf-surface-alt);
+    --border: var(--pf-border); --border2: var(--pf-border-strong);
+    --text: var(--pf-text); --muted: var(--pf-text-muted); --muted2: var(--pf-text-muted);
+    --accent: var(--pf-red);
+    --accent-text: var(--pf-red-text);
+    --green: var(--pf-success); --red: var(--pf-error);
+    /* One brand accent for every source format (the format badge still names it). */
+    --lex-accent: var(--pf-red-text);
+    --mer-accent: var(--pf-red-text);
+    --mtd-accent: var(--pf-red-text);
+    --bar-accent: var(--pf-red-text);
+    --inv-accent: var(--pf-red-text);
+    --bst-accent: var(--pf-red-text);
+    --mtdsl-accent: var(--pf-red-text);
+    --lamb-accent: var(--pf-red-text);
+    --slate: var(--pf-text-muted); --amber: var(--pf-warning);
   }
-  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Mono','Courier New',monospace; min-height: 100vh; padding: 2.5rem 2rem; }
+  body { background: var(--bg); color: var(--text); font-family: var(--pf-font); min-height: 100vh; padding: 2.5rem 2rem; }
   ::-webkit-scrollbar { width: 6px; height: 6px; }
   ::-webkit-scrollbar-track { background: var(--bg3); }
   ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
   .container { max-width: 1280px; margin: 0 auto; }
 
   header { margin: 1.25rem 0 2rem; }
-  h1 { font-family: 'IBM Plex Sans',sans-serif; font-size: 1.6rem; font-weight: 600; color: #fff; margin-bottom: 0.3rem; }
+  h1 { font-family: var(--pf-font); font-size: 1.6rem; font-weight: var(--pf-weight-regular); letter-spacing: var(--pf-headline-tracking); color: var(--text); margin-bottom: 0.3rem; }
   .subtitle { font-size: 0.75rem; color: var(--muted); }
 
   .format-badge-wrap { margin-bottom: 1.25rem; min-height: 2rem; display: flex; align-items: center; }
   .format-badge { display: none; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
-  .format-badge.lex  { display: inline-flex; background: rgba(74,158,255,0.12); border: 1px solid rgba(74,158,255,0.4); color: var(--lex-accent); }
-  .format-badge.mer  { display: inline-flex; background: rgba(167,139,250,0.12); border: 1px solid rgba(167,139,250,0.4); color: var(--mer-accent); }
-  .format-badge .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-  .format-badge.lex .dot { background: var(--lex-accent); }
-  .format-badge.mer .dot { background: var(--mer-accent); }
-  .format-badge.mtd { display: inline-flex; background: rgba(45,212,191,0.12); border: 1px solid rgba(45,212,191,0.4); color: var(--mtd-accent); }
-  .format-badge.mtd .dot { background: var(--mtd-accent); }
-  .format-badge.bar { display: inline-flex; background: rgba(249,115,22,0.12); border: 1px solid rgba(249,115,22,0.4); color: var(--bar-accent); }
-  .format-badge.bar .dot { background: var(--bar-accent); }
-  .format-badge.inv { display: inline-flex; background: rgba(232,121,249,0.12); border: 1px solid rgba(232,121,249,0.4); color: var(--inv-accent); }
-  .format-badge.inv .dot { background: var(--inv-accent); }
-  .format-badge.bst { display: inline-flex; background: rgba(52,211,153,0.12); border: 1px solid rgba(52,211,153,0.4); color: var(--bst-accent); }
-  .format-badge.bst .dot { background: var(--bst-accent); }
-  .format-badge.mtdsl { display: inline-flex; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.4); color: var(--mtdsl-accent); }
-  .format-badge.mtdsl .dot { background: var(--mtdsl-accent); }
-  .format-badge.lamb { display: inline-flex; background: rgba(34,211,238,0.12); border: 1px solid rgba(34,211,238,0.4); color: var(--lamb-accent); }
-  .format-badge.lamb .dot { background: var(--lamb-accent); }
+  .format-badge.lex, .format-badge.mer, .format-badge.mtd, .format-badge.bar, .format-badge.inv,
+  .format-badge.bst, .format-badge.mtdsl, .format-badge.lamb, .format-badge.meridian { display: inline-flex; background: var(--pf-red-tint); border: 1px solid var(--pf-red); color: var(--accent-text); }
+  .format-badge .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; background: var(--pf-red); }
 
   .control-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 0.85rem 1.25rem; margin-bottom: 1.25rem; }
   .ctrl-label { font-size: 0.72rem; color: var(--muted); white-space: nowrap; }
   .toggle-pills { display: flex; background: var(--bg3); border-radius: 6px; padding: 3px; gap: 3px; }
-  .toggle-pill { padding: 5px 18px; border-radius: 4px; font-size: 0.8rem; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--muted); font-family: 'IBM Plex Mono',monospace; transition: background 0.15s, color 0.15s; }
-  .toggle-pill.active { background: var(--accent); color: #fff; }
+  .toggle-pill { padding: 5px 18px; border-radius: 4px; font-size: 0.8rem; font-weight: 500; cursor: pointer; border: none; background: transparent; color: var(--muted); font-family: var(--pf-font); transition: background 0.15s, color 0.15s; }
+  .toggle-pill.active { background: var(--accent); color: #fff; font-weight: var(--pf-weight-semibold); }
   .toggle-pill:not(.active):hover { color: var(--text); }
   .ctrl-hint { font-size: 0.68rem; color: var(--muted2); }
-  .chambers-select { background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; color: var(--text); font-family: 'IBM Plex Mono',monospace; font-size: 0.8rem; padding: 5px 10px; cursor: pointer; outline: none; transition: border-color 0.15s; }
+  .chambers-select { background: var(--bg2); border: 1px solid var(--border2); border-radius: 6px; color: var(--text); font-family: var(--pf-font); font-size: 0.8rem; padding: 5px 10px; cursor: pointer; outline: none; transition: border-color 0.15s; }
   .chambers-select:focus, .chambers-select:hover { border-color: var(--accent); }
   .chambers-combo { position: relative; display: inline-block; }
   .chambers-input { cursor: text; min-width: 280px; }
-  .chambers-list { display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; min-width: 100%; max-height: 280px; overflow-y: auto; background: var(--bg3); border: 1px solid var(--border2); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.35); padding: 4px 0; }
+  .chambers-list { display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 50; min-width: 100%; max-height: 280px; overflow-y: auto; background: var(--bg2); border: 1px solid var(--border2); border-radius: 6px; box-shadow: 0 8px 24px rgba(60,70,90,0.18); padding: 4px 0; }
   .chambers-list.open { display: block; }
-  .chambers-opt { padding: 6px 12px; font-family: 'IBM Plex Mono',monospace; font-size: 0.8rem; color: var(--text); cursor: pointer; white-space: nowrap; }
-  .chambers-opt.active { background: var(--accent); color: #000; }
-  .chambers-opt.manual { border-top: 1px solid var(--border2); font-style: italic; }
-  .chambers-opt.empty { color: var(--muted, #888); cursor: default; }
+  .chambers-opt { padding: 6px 12px; font-family: var(--pf-font); font-size: 0.8rem; color: var(--text); cursor: pointer; white-space: nowrap; }
+  .chambers-opt.active { background: var(--pf-red-tint); color: var(--text); }
+  .chambers-opt.manual { border-top: 1px solid var(--border); font-style: italic; }
+  .chambers-opt.empty { color: var(--muted); cursor: default; }
 
   .drop-zone { border: 1.5px dashed var(--border2); border-radius: 10px; padding: 2.5rem 2rem; text-align: center; cursor: pointer; background: var(--bg2); transition: border-color 0.2s, background 0.2s; margin-bottom: 1.25rem; user-select: none; }
-  .drop-zone:hover, .drop-zone.dragging { border-color: var(--accent); background: rgba(148,163,184,0.05); }
+  .drop-zone:hover, .drop-zone.dragging { border-color: var(--accent); background: var(--pf-red-tint); }
   .drop-icon { font-size: 2rem; margin-bottom: 0.6rem; line-height: 1; }
-  .drop-label { font-size: 0.9rem; color: #aaa; font-family: 'IBM Plex Sans',sans-serif; }
-  .drop-label.active { color: var(--accent); }
+  .drop-label { font-size: 0.9rem; color: var(--text); font-family: var(--pf-font); }
+  .drop-label.active { color: var(--accent-text); }
   .drop-hint { font-size: 0.7rem; color: var(--muted2); margin-top: 0.4rem; }
 
-  .error { display: none; background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.3); border-radius: 8px; padding: 0.8rem 1rem; color: var(--red); font-size: 0.8rem; margin-bottom: 1.25rem; }
+  .error { display: none; background: var(--pf-error-bg); border: 1px solid var(--pf-error-border); border-radius: 8px; padding: 0.8rem 1rem; color: var(--red); font-size: 0.8rem; margin-bottom: 1.25rem; }
 
   #results { display: none; }
 
@@ -87,10 +130,10 @@
   .info-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 0.85rem 1rem; }
   .info-card-label { font-size: 0.62rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 4px; }
   .info-card-value { font-size: 0.9rem; font-weight: 500; color: var(--text); }
-  .info-card-value.accent { color: var(--accent); }
+  .info-card-value.accent { color: var(--accent-text); font-weight: var(--pf-weight-semibold); }
 
   .vat-check { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
-  .vat-check-title { font-size: 0.65rem; color: var(--accent); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; margin-bottom: 0.75rem; }
+  .vat-check-title { font-size: 0.65rem; color: var(--accent-text); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 600; margin-bottom: 0.75rem; }
   .vat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.75rem; }
   .vat-cell { display: flex; flex-direction: column; gap: 3px; }
   .vat-cell-label { font-size: 0.65rem; color: var(--muted); }
@@ -100,61 +143,53 @@
   .chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; font-size: 0.72rem; }
   .chip-label { color: var(--muted); }
   .match-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 6px; font-size: 0.72rem; font-weight: 500; }
-  .match-badge.ok  { background: rgba(52,211,153,0.1);  border: 1px solid rgba(52,211,153,0.3);  color: var(--green); }
-  .match-badge.err { background: rgba(251,113,133,0.1); border: 1px solid rgba(251,113,133,0.3); color: var(--red); }
-  .copy-btn { padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 0.72rem; font-family: 'IBM Plex Mono',monospace; letter-spacing: 0.05em; transition: background 0.15s; border: 1px solid; }
-  .copy-btn.dl { background: #1a3a1a; border-color: #2a6a2a; color: #86efac; }
-  .copy-btn.dl:hover { background: #2a5a2a; }
-  .copy-btn.bank-btn { background: #1e2a3a; border-color: #3a5a7a; color: #93c5fd; }
-  .copy-btn.bank-btn:hover { background: #263548; }
-  .copy-btn.sales-btn { background: #1a2e3a; border-color: #2a6a8a; color: #7dd3fc; }
-  .copy-btn.sales-btn:hover { background: #1e3a4a; }
+  .match-badge.ok  { background: var(--pf-success-bg); border: 1px solid var(--pf-success-border); color: var(--green); }
+  .match-badge.err { background: var(--pf-error-bg);   border: 1px solid var(--pf-error-border);   color: var(--red); }
+  .copy-btn { padding: 5px 14px; border-radius: 6px; cursor: pointer; font-size: 0.72rem; font-family: var(--pf-font); font-weight: 500; letter-spacing: 0.02em; transition: background 0.15s, border-color 0.15s; border: 1px solid var(--border2); background: var(--bg2); color: var(--text); }
+  .copy-btn:hover { background: var(--bg3); border-color: var(--text); }
+  /* Bank exports are the main action (brand Red); Sales exports are filled
+     in brand Dark Grey; Copy CSV stays a plain outlined button. */
+  #copy-btn { border-color: var(--pf-dark-grey); }
+  .copy-btn.dl { background: var(--pf-success-bg); border-color: var(--pf-success-border); color: var(--pf-success); }
+  .copy-btn.dl:hover { background: var(--pf-success-border); }
+  .copy-btn.bank-btn { background: var(--pf-red); border-color: var(--pf-red); color: #fff; font-weight: var(--pf-weight-semibold); }
+  .copy-btn.bank-btn:hover { background: var(--pf-red-hover); border-color: var(--pf-red-hover); }
+  .copy-btn.sales-btn { background: var(--pf-dark-grey); border-color: var(--pf-dark-grey); color: #fff; font-weight: var(--pf-weight-semibold); }
+  .copy-btn.sales-btn:hover { background: var(--pf-dark-grey-hover); border-color: var(--pf-dark-grey-hover); }
   .period-box { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 4px 8px; background: var(--bg2); border: 1px solid var(--border); border-radius: 6px; font-size: 0.72rem; }
-  .period-box input[type=date] { background: var(--bg); color: inherit; border: 1px solid var(--border2); border-radius: 4px; padding: 3px 5px; font: inherit; color-scheme: dark; }
+  .period-box input[type=date] { background: var(--bg2); color: inherit; border: 1px solid var(--border2); border-radius: 4px; padding: 3px 5px; font: inherit; color-scheme: light; }
   .period-box .copy-btn:disabled { opacity: 0.35; cursor: not-allowed; }
   .period-info { color: var(--muted); }
   .btn-separator { width: 1px; height: 22px; background: var(--border2); align-self: center; margin: 0 2px; }
 
-  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); }
+  .table-wrap { overflow-x: auto; border-radius: 8px; border: 1px solid var(--border); background: var(--bg2); }
   table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
-  thead tr { background: var(--bg2); border-bottom: 1px solid var(--border); }
-  th { padding: 8px 10px; text-align: left; color: var(--accent); font-weight: 500; font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; position: sticky; top: 0; background: var(--bg2); z-index: 2; }
-  td { padding: 6px 10px; border-bottom: 1px solid #181b24; }
-  tr.row-in  { background: rgba(52,211,153,0.03); }
-  tr.row-in:hover  { background: rgba(52,211,153,0.08); }
-  tr.row-out { background: rgba(251,113,133,0.05); }
-  tr.row-out:hover { background: rgba(251,113,133,0.1); }
-  tr.row-vatwarning { background: rgba(251,191,36,0.18); box-shadow: inset 3px 0 0 #fbbf24; }
-  tr.row-vatwarning:hover { background: rgba(251,191,36,0.28); }
-  tr.row-novatpct { background: rgba(74,158,255,0.1); box-shadow: inset 3px 0 0 #4a9eff; }
-  tr.row-novatpct:hover { background: rgba(74,158,255,0.18); }
-  tr.row-adj { background: rgba(251,191,36,0.07); box-shadow: inset 3px 0 0 rgba(251,191,36,0.4); }
-  tr.row-adj:hover { background: rgba(251,191,36,0.13); }
-  tr.row-adj td { font-style: italic; color: #a89060; }
-  tr.row-expenses { background: rgba(74,158,255,0.04); }
-  tr.row-expenses:hover { background: rgba(74,158,255,0.09); }
-  tr.row-mixed { background: rgba(167,139,250,0.05); }
-  tr.row-mixed:hover { background: rgba(167,139,250,0.1); }
-  tr.row-vatoverride { background: rgba(251,191,36,0.12); box-shadow: inset 3px 0 0 #fbbf24; }
-  tr.row-vatoverride:hover { background: rgba(251,191,36,0.22); }
+  thead tr { background: var(--pf-dark-grey); border-bottom: 1px solid var(--pf-dark-grey); }
+  th { padding: 8px 10px; text-align: left; color: #fff; font-weight: 500; font-size: 0.65rem; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; position: sticky; top: 0; background: var(--pf-dark-grey); z-index: 2; }
+  td { padding: 6px 10px; border-bottom: 1px solid var(--border); }
+  tr.row-in:hover  { background: var(--bg3); }
+  tr.row-out { background: var(--pf-error-bg); }
+  tr.row-vatwarning { background: var(--pf-warning-bg); box-shadow: inset 3px 0 0 var(--pf-warning-border); }
+  tr.row-novatpct { background: var(--pf-info-bg); box-shadow: inset 3px 0 0 var(--pf-dark-grey); }
+  tr.row-adj { background: var(--bg3); box-shadow: inset 3px 0 0 var(--pf-warning-border); }
+  tr.row-adj td { font-style: italic; color: var(--muted); }
+  tr.row-expenses { background: var(--pf-info-bg); }
+  tr.row-mixed { background: var(--pf-success-bg); }
+  tr.row-vatoverride { background: var(--pf-warning-bg); box-shadow: inset 3px 0 0 var(--pf-warning-border); }
   .amt  { text-align: right; font-variant-numeric: tabular-nums; }
   .pos  { color: var(--green); }
   .neg  { color: var(--red); }
-  .muted-txt { color: #888; }
+  .muted-txt { color: var(--muted); }
+  /* Tax type column: colour no longer varies by source format. */
   .slate  { color: var(--slate); }
-  .pink   { color: var(--inv-accent); }
-  .purple { color: var(--mer-accent); }
-  .blue   { color: var(--lex-accent); }
-  .green  { color: var(--bst-accent); }
-  .gold   { color: var(--mtdsl-accent); }
-  .cyan   { color: var(--lamb-accent); }
-  .amber  { color: var(--amber); }
+  .pink, .purple, .blue, .green, .gold, .cyan { color: var(--text); }
+  .amber  { color: var(--text); }
   .desc { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  tfoot tr { background: var(--bg2); border-top: 2px solid var(--border2); }
-  tfoot td { padding: 7px 10px; }
+  tfoot tr { background: var(--bg3); border-top: 2px solid var(--border2); }
+  tfoot td { padding: 7px 10px; font-weight: 600; }
   .foot-label { font-size: 0.65rem; color: var(--muted); letter-spacing: 0.08em; text-transform: uppercase; }
   .sheet-note { margin-top: 0.6rem; font-size: 0.65rem; color: var(--muted2); }
-  .sheet-note span { color: var(--accent); }
+  .sheet-note span { color: var(--accent-text); }
 
   .legend { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
   .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.65rem; color: var(--muted); }
@@ -236,7 +271,7 @@
           <span class="match-badge" id="vat-badge" style="margin-top:2px;"></span>
         </div>
       </div>
-      <div id="vat-warning" style="display:none; margin-top:0.75rem; padding:0.5rem 0.75rem; background:rgba(251,191,36,0.08); border:1px solid rgba(251,191,36,0.3); border-radius:6px; font-size:0.72rem; color:#fbbf24;"></div>
+      <div id="vat-warning" style="display:none; margin-top:0.75rem; padding:0.5rem 0.75rem; background:var(--pf-warning-bg); border:1px solid var(--pf-warning-border); border-radius:6px; font-size:0.72rem; color:var(--pf-warning);"></div>
     </div>
 
     <div class="summary-bar">
@@ -262,11 +297,11 @@
     </div>
 
     <div class="legend" id="legend" style="display:none">
-      <div class="legend-item"><div class="legend-dot" style="background:rgba(52,211,153,0.25); border:1px solid rgba(52,211,153,0.4)"></div>Fees only</div>
-      <div class="legend-item"><div class="legend-dot" style="background:rgba(74,158,255,0.2); border:1px solid rgba(74,158,255,0.3)"></div>Expenses only</div>
-      <div class="legend-item"><div class="legend-dot" style="background:rgba(167,139,250,0.15); border:1px solid rgba(167,139,250,0.3)"></div>Fees + Expenses (combined)</div>
-      <div class="legend-item"><div class="legend-dot" style="background:rgba(251,191,36,0.3); border:1px solid #fbbf24"></div>VAT% = 20 but £0 VAT charged — treated as Zero Rated</div>
-      <div class="legend-item"><div class="legend-dot" style="background:rgba(74,158,255,0.25); border:1px solid #4a9eff"></div>Empty VAT% — split into 20% line (VAT×6) + Zero Rated remainder</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--pf-surface); border:1px solid var(--pf-border-strong)"></div>Fees only</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--pf-info-bg); border:1px solid var(--pf-info-border)"></div>Expenses only</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--pf-success-bg); border:1px solid var(--pf-success-border)"></div>Fees + Expenses (combined)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--pf-warning-bg); border:1px solid var(--pf-warning-border)"></div>VAT% = 20 but £0 VAT charged — treated as Zero Rated</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--pf-info-bg); border:1px solid var(--pf-dark-grey)"></div>Empty VAT% — split into 20% line (VAT×6) + Zero Rated remainder</div>
     </div>
 
     <div class="table-wrap">
@@ -525,8 +560,9 @@ function applyTheme(format) {
   var isMtdSl = format === 'mtdsl';
   var isLamb  = format === 'lamb';
 
-  var accentHex = isLex ? '#4a9eff' : (isMtd ? '#2dd4bf' : (isBar ? '#f97316' : (isInv ? '#e879f9' : (isBst ? '#34d399' : (isMtdSl ? '#f59e0b' : (isLamb ? '#22d3ee' : '#a78bfa'))))));
-  var accentRgba = isLex ? 'rgba(74,158,255,0.05)' : (isMtd ? 'rgba(45,212,191,0.05)' : (isBar ? 'rgba(249,115,22,0.05)' : (isInv ? 'rgba(232,121,249,0.05)' : (isBst ? 'rgba(52,211,153,0.05)' : (isMtdSl ? 'rgba(245,158,11,0.05)' : (isLamb ? 'rgba(34,211,238,0.05)' : 'rgba(167,139,250,0.05)'))))));
+  // Every format uses the brand accent (Philip Friede & Co.); the badge names the format.
+  var accentHex = 'var(--pf-red)';
+  var accentRgba = 'var(--pf-red-tint)';
 
   document.documentElement.style.setProperty('--accent', accentHex);
   var styleEl = document.getElementById('dynamic-style');
@@ -539,14 +575,7 @@ function applyTheme(format) {
     isLex ? 'LEX detected' : (isMtd ? 'MTD CB detected' : (isBar ? 'BarBooks detected' : (isInv ? 'InvoicesPaid detected' : (isBst ? 'BarStat detected' : (isMtdSl ? 'MTD SL detected' : (isLamb ? 'Lamb Chambers detected' : 'Meridian detected'))))));
 
   var copyBtn = document.getElementById('copy-btn');
-  if (isLex)        { copyBtn.style.background='#1a3a6e'; copyBtn.style.borderColor='#2a5298'; copyBtn.style.color='#7ab3ff'; }
-  else if (isMtd)   { copyBtn.style.background='#0f2e2e'; copyBtn.style.borderColor='#1a6e6e'; copyBtn.style.color='#5eead4'; }
-  else if (isBar)   { copyBtn.style.background='#2e1a0a'; copyBtn.style.borderColor='#7a3a10'; copyBtn.style.color='#fdba74'; }
-  else if (isInv)   { copyBtn.style.background='#2e0a2e'; copyBtn.style.borderColor='#7a1a7a'; copyBtn.style.color='#f0abfc'; }
-  else if (isBst)   { copyBtn.style.background='#0a2e1a'; copyBtn.style.borderColor='#1a7a4a'; copyBtn.style.color='#6ee7b7'; }
-  else if (isMtdSl) { copyBtn.style.background='#2e1f0a'; copyBtn.style.borderColor='#7a5010'; copyBtn.style.color='#fcd34d'; }
-  else if (isLamb)  { copyBtn.style.background='#0a2a2e'; copyBtn.style.borderColor='#0e6a78'; copyBtn.style.color='#67e8f9'; }
-  else              { copyBtn.style.background='#2a1a6e'; copyBtn.style.borderColor='#4a2aae'; copyBtn.style.color='#c4b5fd'; }
+  // Copy CSV is styled as the main (brand Red) button in the stylesheet.
 
   document.getElementById('info-grid').style.display = 'grid';
   document.getElementById('legend').style.display    = (format === 'meridian') ? 'flex' : 'none';
@@ -627,7 +656,7 @@ function showDuplicateNotice(skipped) {
     el = document.createElement('div');
     el.id = 'duplicate-files-notice';
     el.setAttribute('role', 'status');
-    el.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:9999;max-width:min(640px,calc(100vw - 32px));padding:10px 36px 10px 14px;border-radius:8px;background:#fef3c7;color:#78350f;border:1px solid #f59e0b;font:13px/1.45 system-ui,sans-serif;box-shadow:0 4px 16px rgba(0,0,0,0.2);';
+    el.style.cssText = 'position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:9999;max-width:min(640px,calc(100vw - 32px));padding:10px 36px 10px 14px;border-radius:8px;background:var(--pf-warning-bg);color:var(--pf-warning);border:1px solid var(--pf-warning-border);font:13px/1.45 var(--pf-font);box-shadow:0 4px 16px rgba(0,0,0,0.2);';
     document.body.appendChild(el);
   }
   el.innerHTML = '';
